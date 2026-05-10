@@ -1,28 +1,31 @@
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
 import os
 
 TOKEN = os.getenv("TOKEN")
 
-def start(update, context):
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [[InlineKeyboardButton("Consultar número", callback_data="consulta")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    update.message.reply_text("Presiona el botón para ver tu número del momento:", reply_markup=reply_markup)
+    await update.message.reply_text(
+        "Presiona el botón para ver tu número del momento:",
+        reply_markup=reply_markup
+    )
 
-def handle_callback(update, context):
+async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    query.answer()
+    await query.answer()
 
-    # Aquí pondremos tu lógica real luego
     numero = "34"
     animal = "Venado"
 
-    query.message.reply_text(f"Número del momento: {numero}\nAnimalito: {animal}")
+    await query.message.reply_text(f"Número del momento: {numero}\nAnimalito: {animal}")
 
-updater = Updater(TOKEN, use_context=True)
-dp = updater.dispatcher
+def main():
+    app = ApplicationBuilder().token(TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CallbackQueryHandler(handle_callback))
+    app.run_polling()
 
-dp.add_handler(CommandHandler("start", start))
-dp.add_handler(CallbackQueryHandler(handle_callback))
-
-updater.start_polling()
+if __name__ == "__main__":
+    main()
