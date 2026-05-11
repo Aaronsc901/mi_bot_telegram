@@ -97,6 +97,11 @@ async def get_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"Chat ID: {update.effective_chat.id}")
 
 
+async def reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global MENSAJE_FIJO_ID
+    MENSAJE_FIJO_ID = None
+    await update.message.reply_text("ID reiniciado. El próximo mensaje será nuevo.")
+
 # -------------------------------
 # MAIN
 # -------------------------------
@@ -105,6 +110,7 @@ def main():
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("id", get_id))  # opcional
+    app.add_handler(CommandHandler("reset", reset))
     app.add_handler(CallbackQueryHandler(handle_callback))
 
     app.run_polling()
