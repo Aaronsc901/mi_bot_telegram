@@ -4,6 +4,10 @@ import os
 import requests
 
 TOKEN = os.getenv("TOKEN")
+#id arreglo
+async def get_id(update: Update, context):
+    await update.message.reply_text(f"Chat ID: {update.effective_chat.id}")
+app.add_handler(CommandHandler("id", get_id))
 
 # URL RAW del archivo JSON en GitHub
 URL_DATOS = "https://raw.githubusercontent.com/Aaronsc901/mi_bot_telegram/master/datos.json"
