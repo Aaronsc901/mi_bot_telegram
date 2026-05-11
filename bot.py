@@ -34,15 +34,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # -------------------------------
 # Callback del botón
 # -------------------------------
-from datetime import datetime
 
-MENSAJE_FIJO_ID = None
 
 from datetime import datetime
 import pytz
-
-
-
 MENSAJE_FIJO_ID = None
 
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
