@@ -9,10 +9,10 @@ TOKEN = os.getenv("TOKEN")
 URL_DATOS = "https://raw.githubusercontent.com/Aaronsc901/mi_bot_telegram/master/datos.json"
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [[InlineKeyboardButton("Consultar número", callback_data="consulta")]]
+    keyboard = [[InlineKeyboardButton("CONSULTAR JUGADA", callback_data="consulta")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text(
-        "Presiona el botón para ver tu número del momento:",
+        "Presiona el botón para ver la jugada actual:",
         reply_markup=reply_markup
     )
 
