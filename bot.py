@@ -2,12 +2,11 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
 import os
 import requests
-import csv
 
 TOKEN = os.getenv("TOKEN")
 
-# URL del CSV de Google Sheets
-https://docs.google.com/spreadsheets/d/1ZdEVbBvs0bWz8ObtfeWYbolD7p-euIZu5Oq5I0WdLyg/export?format=csv
+# URL RAW del archivo JSON en GitHub
+URL_DATOS = "https://raw.githubusercontent.com/TU_USUARIO/mi_bot_telegram/master/datos.json"
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [[InlineKeyboardButton("Consultar número", callback_data="consulta")]]
@@ -21,27 +20,20 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    # Descargar CSV
-    response = requests.get(URL_SHEETS)
-    decoded = response.content.decode("utf-8").splitlines()
-    reader = csv.DictReader(decoded)
-
-    # Leer la primera fila
-    datos = next(reader)
+    # Leer datos desde GitHub
+    datos = requests.get(URL_DATOS).json()
 
     loteria = datos["loteria"]
     sorteo = datos["sorteo"]
     favorito = datos["favorito"]
-    jugada1 = datos["jugada1"]
-    jugada2 = datos["jugada2"]
-    jugada3 = datos["jugada3"]
+    jugada = datos["jugada"]
 
     mensaje = (
         f"LOTERÍA: {loteria}\n"
         f"SORTEO: {sorteo}\n"
         f"FAVORITO: ({favorito})\n"
         f"JUGADA COMPLETA:\n"
-        f"({jugada1} -- {jugada2} -- {jugada3})"
+        f"({jugada[0]} -- {jugada[1]} -- {jugada[2]})"
     )
 
     await query.message.reply_text(mensaje)
