@@ -38,6 +38,10 @@ from datetime import datetime
 
 MENSAJE_FIJO_ID = None
 
+from datetime import datetime
+
+MENSAJE_FIJO_ID = None
+
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global MENSAJE_FIJO_ID
     query = update.callback_query
@@ -52,23 +56,24 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     response = requests.get(URL_DATOS)
     datos = response.json()
 
-    loteria = datos["loteria"]
-    sorteo = datos["sorteo"]
-    favorito = datos["favorito"]
-    jugada = datos["jugada"]
+    loteria = datos["loteria"].replace("-", "\\-")
+    sorteo = datos["sorteo"].replace("-", "\\-")
+    favorito = datos["favorito"].replace("-", "\\-")
+    jugada = [str(j).replace("-", "\\-") for j in datos["jugada"]]
 
-    # Formato premium
-    hora = datetime.now().strftime("%I:%M %p")
+    hora = datetime.now().strftime("%I:%M %p").replace(".", "\\.")
 
     mensaje = (
-        f"LOTERÍA: {loteria}\n"
-        f"SORTEO: {sorteo}\n"
-        f"FAVORITO: ({favorito})\n"
-        f"JUGADA COMPLETA:\n"
-        f"({jugada[0]} -- {jugada[1]} -- {jugada[2]})"
+        "🔥 *ACTUALIZACIÓN DE JUGADA* 🔥\n"
+        f"📅 *Última actualización:* `{hora}`\n\n"
+        f"🎯 *Lotería:* *{loteria}*\n"
+        f"🕒 *Sorteo:* *{sorteo}*\n"
+        f"🐾 *Favorito:* *{favorito}*\n\n"
+        "🔢 *Jugada del momento:*\n"
+        f"*{jugada[0]}* \\- *{jugada[1]}* \\- *{jugada[2]}*"
     )
 
-    # Si ya existe un mensaje fijo → editarlo
+    # Intentar editar el mensaje fijo
     if MENSAJE_FIJO_ID:
         try:
             await context.bot.edit_message_text(
@@ -78,10 +83,11 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode="MarkdownV2"
             )
             return
-        except:
-            MENSAJE_FIJO_ID = None  # Si falla, lo reiniciamos
+        except Exception as e:
+            print("Error al editar:", e)
+            MENSAJE_FIJO_ID = None
 
-    # Si no existe → crear uno nuevo
+    # Crear mensaje nuevo
     msg = await context.bot.send_message(
         chat_id=GRUPO_PERMITIDO,
         text=mensaje,
