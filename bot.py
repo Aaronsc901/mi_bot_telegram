@@ -41,8 +41,6 @@ MENSAJE_FIJO_ID = None
 from datetime import datetime
 import pytz
 
-tz = pytz.timezone("America/Caracas")
-
 
 
 MENSAJE_FIJO_ID = None
@@ -65,7 +63,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     sorteo = datos["sorteo"].replace("-", "\\-")
     favorito = datos["favorito"].replace("-", "\\-")
     jugada = [str(j).replace("-", "\\-") for j in datos["jugada"]]
-
+    tz = pytz.timezone("America/Caracas")
     hora = datetime.now(tz).strftime("%I:%M %p")
 
  
