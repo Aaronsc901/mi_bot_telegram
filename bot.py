@@ -34,6 +34,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # -------------------------------
 # Callback del botón
 # -------------------------------
+from datetime import datetime
+
+MENSAJE_FIJO_ID = None
+
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global MENSAJE_FIJO_ID
     query = update.callback_query
@@ -53,6 +57,9 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     favorito = datos["favorito"]
     jugada = datos["jugada"]
 
+    # Formato premium
+    hora = datetime.now().strftime("%I:%M %p")
+
     mensaje = (
         f"LOTERÍA: {loteria}\n"
         f"SORTEO: {sorteo}\n"
@@ -67,16 +74,21 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.edit_message_text(
                 chat_id=GRUPO_PERMITIDO,
                 message_id=MENSAJE_FIJO_ID,
-                text=mensaje
+                text=mensaje,
+                parse_mode="MarkdownV2"
             )
             return
         except:
-            pass  # Si falla, enviamos uno nuevo
+            MENSAJE_FIJO_ID = None  # Si falla, lo reiniciamos
 
-    # Si no existe → crear uno nuevo y guardar el ID
-    msg = await query.message.reply_text(mensaje)
+    # Si no existe → crear uno nuevo
+    msg = await context.bot.send_message(
+        chat_id=GRUPO_PERMITIDO,
+        text=mensaje,
+        parse_mode="MarkdownV2"
+    )
+
     MENSAJE_FIJO_ID = msg.message_id
-
 
 # -------------------------------
 # Comando /id (opcional)
