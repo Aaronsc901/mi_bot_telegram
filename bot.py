@@ -5,18 +5,24 @@ import requests
 
 TOKEN = os.getenv("TOKEN")
 
-# ⛔ SOLO ESTE GRUPO PUEDE USAR EL BOT
-GRUPO_PERMITIDO = -1002793980909  # <-- coloca aquí tu ID real
+# Grupo donde SÍ funciona el bot
+GRUPO_PERMITIDO = -1002793980909 # <-- tu ID de grupo
 
-# URL RAW del archivo JSON en GitHub
+# URL RAW del JSON
 URL_DATOS = "https://raw.githubusercontent.com/Aaronsc901/mi_bot_telegram/master/datos.json"
 
-# Comando /start (solo funciona en el grupo permitido)
+# Variable global para mantener un solo mensaje
+MENSAJE_FIJO_ID = None
+
+
+# -------------------------------
+# Comando /start
+# -------------------------------
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.id != GRUPO_PERMITIDO:
-        return  # Ignorar privados y otros grupos
+        return
 
-    keyboard = [[InlineKeyboardButton("CONSULTAR JUGADA", callback_data="consulta")]]
+    keyboard = [[InlineKeyboardButton("CONSULTA LA JUGADA", callback_data="consulta")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await update.message.reply_text(
@@ -24,8 +30,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=reply_markup
     )
 
-# Botón (callback) — también filtrado por grupo
+
+# -------------------------------
+# Callback del botón
+# -------------------------------
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global MENSAJE_FIJO_ID
     query = update.callback_query
 
     if query.message.chat.id != GRUPO_PERMITIDO:
@@ -51,12 +61,33 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"({jugada[0]} -- {jugada[1]} -- {jugada[2]})"
     )
 
-    await query.message.reply_text(mensaje)
+    # Si ya existe un mensaje fijo → editarlo
+    if MENSAJE_FIJO_ID:
+        try:
+            await context.bot.edit_message_text(
+                chat_id=GRUPO_PERMITIDO,
+                message_id=MENSAJE_FIJO_ID,
+                text=mensaje
+            )
+            return
+        except:
+            pass  # Si falla, enviamos uno nuevo
 
-# Comando /id (puedes borrarlo después de usarlo)
+    # Si no existe → crear uno nuevo y guardar el ID
+    msg = await query.message.reply_text(mensaje)
+    MENSAJE_FIJO_ID = msg.message_id
+
+
+# -------------------------------
+# Comando /id (opcional)
+# -------------------------------
 async def get_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"Chat ID: {update.effective_chat.id}")
 
+
+# -------------------------------
+# MAIN
+# -------------------------------
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
@@ -65,6 +96,7 @@ def main():
     app.add_handler(CallbackQueryHandler(handle_callback))
 
     app.run_polling()
+
 
 if __name__ == "__main__":
     main()
