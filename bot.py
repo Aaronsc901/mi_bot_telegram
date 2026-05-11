@@ -6,7 +6,7 @@ import requests
 TOKEN = os.getenv("TOKEN")
 
 # Grupo donde SÍ funciona el bot
-GRUPO_PERMITIDO = -1002793980909 # <-- tu ID de grupo
+GRUPO_PERMITIDO = -1002793980909  # <-- tu ID de grupo
 
 # URL RAW del JSON
 URL_DATOS = "https://raw.githubusercontent.com/Aaronsc901/mi_bot_telegram/master/datos.json"
@@ -22,11 +22,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.id != GRUPO_PERMITIDO:
         return
 
-    keyboard = [[InlineKeyboardButton("CONSULTA LA JUGADA", callback_data="consulta")]]
+    keyboard = [[InlineKeyboardButton("Consultar número", callback_data="consulta")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await update.message.reply_text(
-        "Presiona el botón para ver la jugada actual:",
+        "Presiona el botón para ver tu número del momento:",
         reply_markup=reply_markup
     )
 
@@ -34,7 +34,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # -------------------------------
 # Callback del botón
 # -------------------------------
-
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global MENSAJE_FIJO_ID
     query = update.callback_query
@@ -54,32 +53,28 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     favorito = datos["favorito"]
     jugada = datos["jugada"]
 
-    # Formato premium con Markdown V2
     mensaje = (
-        f"🔥 *ACTUALIZACIÓN DE JUGADA* 🔥\n"
-        f"📅 *Última actualización:* `{context.application.timezone.localize(datetime.now()).strftime('%I:%M %p')}`\n\n"
-        f"🎯 *Lotería:* *{loteria}*\n"
-        f"🕒 *Sorteo:* *{sorteo}*\n"
-        f"🐾 *Favorito:* *{favorito}*\n\n"
-        f"🔢 *Jugada del momento:*\n"
-        f"*{jugada[0]}* \- *{jugada[1]}* \- *{jugada[2]}*"
+        f"LOTERÍA: {loteria}\n"
+        f"SORTEO: {sorteo}\n"
+        f"FAVORITO: ({favorito})\n"
+        f"JUGADA COMPLETA:\n"
+        f"({jugada[0]} -- {jugada[1]} -- {jugada[2]})"
     )
 
-    # Intentar editar el mensaje fijo si existe
+    # Si ya existe un mensaje fijo → editarlo
     if MENSAJE_FIJO_ID:
         try:
             await context.bot.edit_message_text(
                 chat_id=GRUPO_PERMITIDO,
                 message_id=MENSAJE_FIJO_ID,
-                text=mensaje,
-                parse_mode="MarkdownV2"
+                text=mensaje
             )
             return
         except:
             pass  # Si falla, enviamos uno nuevo
 
-    # Crear mensaje nuevo y guardar ID
-    msg = await query.message.reply_text(mensaje, parse_mode="MarkdownV2")
+    # Si no existe → crear uno nuevo y guardar el ID
+    msg = await query.message.reply_text(mensaje)
     MENSAJE_FIJO_ID = msg.message_id
 
 
