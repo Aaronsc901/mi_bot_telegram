@@ -22,11 +22,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.id != GRUPO_PERMITIDO:
         return
 
-    keyboard = [[InlineKeyboardButton("Consultar número", callback_data="consulta")]]
+    keyboard = [[InlineKeyboardButton("CONSULTAR JUGADA", callback_data="consulta")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await update.message.reply_text(
-        "Presiona el botón para ver tu número del momento:",
+        "Presiona el botón para ver la jugada actual:",
         reply_markup=reply_markup
     )
 
