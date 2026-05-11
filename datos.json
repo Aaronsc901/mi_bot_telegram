@@ -1,6 +1,6 @@
 {
-  "loteria": "Guacharo",
-  "sorteo": "8-9AM",
-  "favorito": "Hipopotamo",
-  "jugada": ["73", "12", "56"]
+  "loteria": "sin jugada",
+  "sorteo": "sin jugada",
+  "favorito": "sin jugada",
+  "jugada": ["nul", "nul", "nul"]
 }
