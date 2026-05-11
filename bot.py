@@ -3,15 +3,13 @@ from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandle
 import os
 import requests
 
-async def get_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(f"Chat ID: {update.effective_chat.id}")
-
-
 TOKEN = os.getenv("TOKEN")
-#id arreglo
 
 # URL RAW del archivo JSON en GitHub
 URL_DATOS = "https://raw.githubusercontent.com/Aaronsc901/mi_bot_telegram/master/datos.json"
+
+async def get_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(f"Chat ID: {update.effective_chat.id}")
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [[InlineKeyboardButton("CONSULTAR JUGADA", callback_data="consulta")]]
