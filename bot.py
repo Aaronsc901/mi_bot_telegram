@@ -16,10 +16,22 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    numero = "34"
-    animal = "Venado"
+    # 🔢 Aquí defines tus variables reales
+    loteria = "Zulia"
+    sorteo = "Tarde"
+    favorito = "Venado"
+    jugada_completa = ["34", "12", "56"]
 
-    await query.message.reply_text(f"Número del momento: {numero}\nAnimalito: {animal}")
+    # 🧾 Mensaje con la estructura que deseas
+    mensaje = (
+        f"LOTERÍA: {loteria}\n"
+        f"SORTEO: {sorteo}\n"
+        f"FAVORITO: ({favorito})\n"
+        f"JUGADA COMPLETA:\n"
+        f"({jugada_completa[0]} -- {jugada_completa[1]} -- {jugada_completa[2]})"
+    )
+
+    await query.message.reply_text(mensaje)
 
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
