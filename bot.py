@@ -42,8 +42,21 @@ from zoneinfo import ZoneInfo
 def calcular_margen(hora_tope_str):
     ahora = datetime.now(ZoneInfo("America/Caracas"))
 
-    # Redondear a la siguiente hora exacta
-    margen_inicio = (ahora.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1))
+    # Redondeo según intervalo
+    if intervalo == "60":
+        # Redondear a la próxima hora exacta
+        margen_inicio = (ahora.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1))
+
+    elif intervalo == "30":
+        # Redondear a la próxima media hora exacta
+        minuto = ahora.minute
+
+        if minuto == 0:
+            margen_inicio = ahora.replace(minute=30, second=0, microsecond=0)
+        elif minuto <= 30:
+            margen_inicio = ahora.replace(minute=30, second=0, microsecond=0)
+        else:
+            margen_inicio = (ahora.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1))
 
     # Convertir hora tope del JSON
     hora_tope = datetime.strptime(hora_tope_str, "%H:%M").time()
@@ -77,7 +90,8 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     jugada = [str(j).replace("-", "\\-") for j in datos["jugada"]]
     hora = datetime.now(ZoneInfo("America/Caracas")).strftime("%I:%M %p")
     # Calcular margen dinámico
-    margen_inicio, margen_final = calcular_margen(datos["hora_tope"])
+    margen_inicio, margen_final = calcular_margen(datos["hora_tope"], datos["intervalo"])
+
 
  
 
