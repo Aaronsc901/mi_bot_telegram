@@ -75,6 +75,8 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     favorito = datos["favorito"].replace("-", "\\-")
     jugada = [str(j).replace("-", "\\-") for j in datos["jugada"]]
     hora = datetime.now(ZoneInfo("America/Caracas")).strftime("%I:%M %p")
+    # Calcular margen dinámico
+    margen_inicio, margen_final = calcular_margen(datos["hora_tope"])
 
  
 
