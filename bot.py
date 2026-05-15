@@ -40,19 +40,20 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 def calcular_margen(hora_tope_str):
-    # Hora actual en Caracas
     ahora = datetime.now(ZoneInfo("America/Caracas"))
 
-    # Margen inicial = 1 hora después
-    margen_inicio = ahora + timedelta(hours=1)
+    # Redondear a la siguiente hora exacta
+    margen_inicio = (ahora.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1))
 
-    # Convertir hora tope del JSON a datetime
+    # Convertir hora tope del JSON
     hora_tope = datetime.strptime(hora_tope_str, "%H:%M").time()
     margen_final = datetime.combine(ahora.date(), hora_tope)
 
-    # Formatos bonitos
-    inicio_str = margen_inicio.strftime("%I:%M %p")
-    final_str = margen_final.strftime("%I:%M %p")
+    return (
+        margen_inicio.strftime("%I:%M %p"),
+        margen_final.strftime("%I:%M %p")
+    )
+
 
     return inicio_str, final_str
 
