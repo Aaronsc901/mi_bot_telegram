@@ -39,7 +39,7 @@ MENSAJE_FIJO_ID = None
 from datetime import datetime, timedelta 
 from zoneinfo import ZoneInfo
 
-def calcular_margen(hora_tope_str):
+def calcular_margen(hora_tope_str, intervalo):
     ahora = datetime.now(ZoneInfo("America/Caracas"))
 
     # Redondeo según intervalo
@@ -67,7 +67,6 @@ def calcular_margen(hora_tope_str):
         margen_final.strftime("%I:%M %p")
     )
 
-
     return inicio_str, final_str
 
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -90,7 +89,8 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     jugada = [str(j).replace("-", "\\-") for j in datos["jugada"]]
     hora = datetime.now(ZoneInfo("America/Caracas")).strftime("%I:%M %p")
     # Calcular margen dinámico
-    margen_inicio, margen_final = calcular_margen(datos["hora_tope"], datos["intervalo"])
+    margen_inicio, margen_final = calcular_margen(datos["hora_tope"], str(datos["intervalo"]))
+
 
 
  
