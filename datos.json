@@ -1,6 +1,7 @@
 {
   "loteria": "GUACHARO",
   "sorteo": "8-12PM",
+  "hora_tope": "12:00",
   "favorito": "CAIMÁN",
   "jugada": ["30", "29", "36"]
 }
