@@ -1,8 +1,8 @@
 {
-  "loteria": "LOTTO ACTIVO/ LA GRANJITA",
+  "loteria": "GUACHARO",
   "sorteo": "11:30-3:30PM",
-  "hora_tope": "18:00",
-  "favorito": "BURRO",
-  "jugada": ["18", "06", "32"],
+  "hora_tope": "19:00",
+  "favorito": "CHIGUIRE",
+  "jugada": ["44", "71", "20"],
   "intervalo": "60"
 }
