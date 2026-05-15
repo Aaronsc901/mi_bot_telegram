@@ -36,29 +36,31 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # -------------------------------
 
 MENSAJE_FIJO_ID = None
-from datetime import datetime, timedelta 
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 def calcular_margen(hora_tope_str, intervalo):
     ahora = datetime.now(ZoneInfo("America/Caracas"))
 
-    # Redondeo según intervalo
     if intervalo == "60":
-        # Redondear a la próxima hora exacta
-        margen_inicio = (ahora.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1))
+        # Próxima hora exacta
+        margen_inicio = (
+            ahora.replace(minute=0, second=0, microsecond=0)
+            + timedelta(hours=1)
+        )
 
     elif intervalo == "30":
-        # Redondear a la próxima media hora exacta
         minuto = ahora.minute
 
-        if minuto == 0:
-            margen_inicio = ahora.replace(minute=30, second=0, microsecond=0)
-        elif minuto <= 30:
+        if minuto <= 30:
+            # Próxima :30 de esta misma hora
             margen_inicio = ahora.replace(minute=30, second=0, microsecond=0)
         else:
-            margen_inicio = (ahora.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1))
+            # Próxima :30 de la siguiente hora
+            siguiente_hora = ahora.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+            margen_inicio = siguiente_hora.replace(minute=30)
 
-    # Convertir hora tope del JSON
+    # Hora tope desde el JSON (24h)
     hora_tope = datetime.strptime(hora_tope_str, "%H:%M").time()
     margen_final = datetime.combine(ahora.date(), hora_tope)
 
