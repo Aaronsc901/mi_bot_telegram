@@ -3,5 +3,6 @@
   "sorteo": "11:30-3:30PM",
   "hora_tope": "4:00",
   "favorito": "OSO",
-  "jugada": ["16", "27", "24"]
+  "jugada": ["16", "27", "24"],
+  "intervalo": "30" 
 }
