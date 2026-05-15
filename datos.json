@@ -1,7 +1,7 @@
 {
   "loteria": "RULETA ROYAL",
   "sorteo": "11:30-3:30PM",
-  "hora_tope": "16:00",
+  "hora_tope": "16:30",
   "favorito": "OSO",
   "jugada": ["16", "27", "24"],
   "intervalo": "30"
