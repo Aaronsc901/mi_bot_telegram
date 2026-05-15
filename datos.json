@@ -1,7 +1,7 @@
 {
-  "loteria": "GUACHARO",
-  "sorteo": "8-12PM",
-  "hora_tope": "12:00",
-  "favorito": "CAIMÁN",
-  "jugada": ["30", "29", "36"]
+  "loteria": "RULETA",
+  "sorteo": "11:30-3:30PM",
+  "hora_tope": "4:00",
+  "favorito": "OSO",
+  "jugada": ["16", "27", "24"]
 }
