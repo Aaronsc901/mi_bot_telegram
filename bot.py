@@ -85,7 +85,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🔥 *ACTUALIZACIÓN DE JUGADA* 🔥\n"
         f"📅 *Última actualización:* `{hora}`\n\n"
         f"🎯 *Lotería:* *{loteria}*\n"
-        f"🕒 *Sorteo:* `{margen_inicio} - {margen_final}`\n\n"
+        f"🕒 *Sorteo:* `{margen_inicio} - {margen_final}`\n"
         f"🐾 *Favorito:* *{favorito}*\n\n"
         "🔢 *Jugada del momento:*\n"
         f"*{jugada[0]}* \\- *{jugada[1]}* \\- *{jugada[2]}*"
