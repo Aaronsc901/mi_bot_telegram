@@ -36,7 +36,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # -------------------------------
 
 MENSAJE_FIJO_ID = None
-from datetime import datetime
+from datetime import datetime, timedelta 
 from zoneinfo import ZoneInfo
 
 def calcular_margen(hora_tope_str):
