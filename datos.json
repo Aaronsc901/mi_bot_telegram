@@ -1,8 +1,8 @@
 {
   "loteria": "GUACHARO",
   "sorteo": "11:30-3:30PM",
-  "hora_tope": "19:00",
-  "favorito": "CHIGUIRE",
-  "jugada": ["44", "71", "20"],
+  "hora_tope": "12:00",
+  "favorito": "PESCADO",
+  "jugada": ["33", "30", "36"],
   "intervalo": "60"
 }
