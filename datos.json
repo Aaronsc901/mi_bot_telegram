@@ -1,8 +1,8 @@
 {
-  "loteria": "LOTTO ACTIVO/ LA GRAJITA",
+  "loteria": "GUACHARO",
   "sorteo": "11:30-3:30PM",
-  "hora_tope": "14:00",
-  "favorito": "ARDILLA",
-  "jugada": ["32", "25", "33"],
+  "hora_tope": "17:00",
+  "favorito": "RANA",
+  "jugada": ["06", "04", "30"],
   "intervalo": "60"
 }
