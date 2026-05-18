@@ -1,8 +1,8 @@
 {
-  "loteria": "GUACHARO",
+  "loteria": "RULETA ROYAL",
   "sorteo": "11:30-3:30PM",
-  "hora_tope": "17:00",
-  "favorito": "RANA",
-  "jugada": ["06", "04", "30"],
-  "intervalo": "60"
+  "hora_tope": "19:30",
+  "favorito": "CHIVO",
+  "jugada": ["19", "18", "20"],
+  "intervalo": "30"
 }
