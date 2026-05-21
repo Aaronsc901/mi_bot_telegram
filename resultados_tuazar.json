@@ -1,4 +1,125 @@
 {
-    "fecha": "2026-05-21 19:51:33",
-    "resultados": []
+    "fecha": "2026-05-21 19:51:59",
+    "resultados": [
+        {
+            "hora": "8:00 am",
+            "numero": "17",
+            "animal": "Pavo"
+        },
+        {
+            "hora": "9:00 am",
+            "numero": "74",
+            "animal": "Turpial"
+        },
+        {
+            "hora": "10:00 am",
+            "numero": "70",
+            "animal": "Bisonte"
+        },
+        {
+            "hora": "11:00 am",
+            "numero": "53",
+            "animal": "Caracol"
+        },
+        {
+            "hora": "12:00 pm",
+            "numero": "66",
+            "animal": "Lobo"
+        },
+        {
+            "hora": "1:00 pm",
+            "numero": "52",
+            "animal": "Pulpo"
+        },
+        {
+            "hora": "2:00 pm",
+            "numero": "64",
+            "animal": "Gavilan"
+        },
+        {
+            "hora": "3:00 pm",
+            "numero": "34",
+            "animal": "Venado"
+        },
+        {
+            "hora": "4:00 pm",
+            "numero": "Próximo",
+            "animal": ""
+        },
+        {
+            "hora": "5:00 pm",
+            "numero": "Pendiente",
+            "animal": ""
+        },
+        {
+            "hora": "6:00 pm",
+            "numero": "Pendiente",
+            "animal": ""
+        },
+        {
+            "hora": "7:00 pm",
+            "numero": "Pendiente",
+            "animal": ""
+        },
+        {
+            "hora": "8:00 am",
+            "numero": "34",
+            "animal": "Venado"
+        },
+        {
+            "hora": "9:00 am",
+            "numero": "55",
+            "animal": "Oso Hormiguero"
+        },
+        {
+            "hora": "10:00 am",
+            "numero": "6",
+            "animal": "Rana"
+        },
+        {
+            "hora": "11:00 am",
+            "numero": "71",
+            "animal": "Guacamaya"
+        },
+        {
+            "hora": "12:00 pm",
+            "numero": "64",
+            "animal": "Gavilan"
+        },
+        {
+            "hora": "1:00 pm",
+            "numero": "46",
+            "animal": "Puma"
+        },
+        {
+            "hora": "2:00 pm",
+            "numero": "50",
+            "animal": "Canario"
+        },
+        {
+            "hora": "3:00 pm",
+            "numero": "62",
+            "animal": "Cachicamo"
+        },
+        {
+            "hora": "4:00 pm",
+            "numero": "56",
+            "animal": "Tiburón"
+        },
+        {
+            "hora": "5:00 pm",
+            "numero": "31",
+            "animal": "Lapa"
+        },
+        {
+            "hora": "6:00 pm",
+            "numero": "36",
+            "animal": "Culebra"
+        },
+        {
+            "hora": "7:00 pm",
+            "numero": "33",
+            "animal": "Pescado"
+        }
+    ]
 }
