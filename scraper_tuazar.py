@@ -19,40 +19,44 @@ TOKEN = os.getenv("TOKENX")
 if not TOKEN:
     raise Exception("ERROR: La variable de entorno GITHUB_TOKEN no está definida.")
 
-URL_GUACHARO = "https://www.tuazar.com/resultados/animalitos/guacharo-activo/"
+URL_GUACHARO = "https://www.lottoresultados.com/resultados/animalitos/guacharo-activo"
 
 # -----------------------------------------
 # SCRAPING DE TUAZAR
 # -----------------------------------------
 
+
 def scrape_tuazar(url):
     response = requests.get(url, timeout=10)
-    print("HTML recibido:", response.text[:500])
-
     soup = BeautifulSoup(response.text, "html.parser")
 
     resultados = []
 
-    filas = soup.find_all("div", class_="col-12 col-md-6 col-lg-4 mb-3")
+    # Cada resultado está en un <li class="step-item">
+    items = soup.find_all("li", class_="step-item")
 
-    for fila in filas:
-        texto = fila.get_text(" ", strip=True)
-        partes = texto.split()
+    for item in items:
+        # Hora
+        hora_tag = item.find("h4")
+        hora = hora_tag.get_text(strip=True) if hora_tag else None
 
-        try:
-            numero = partes[-3]
-            animal = partes[-2]
-            hora = partes[-1]
-        except:
-            continue
+        # Número + Animal
+        texto_tag = item.find("p", class_="step-text")
+        texto = texto_tag.get_text(strip=True) if texto_tag else None
 
-        resultados.append({
-            "hora": hora,
-            "numero": numero,
-            "animal": animal
-        })
+        if texto:
+            partes = texto.split(" ", 1)
+            numero = partes[0]
+            animal = partes[1] if len(partes) > 1 else ""
+
+            resultados.append({
+                "hora": hora,
+                "numero": numero,
+                "animal": animal
+            })
 
     return resultados
+
 
 # -----------------------------------------
 # SUBIR ARCHIVO A GITHUB
