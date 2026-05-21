@@ -106,10 +106,10 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Leer datos desde GitHub
     datos = obtener_datos()
-    loteria = datos["loteria"].replace("-", "\\-")
-    sorteo = datos["sorteo"].replace("-", "\\-")
-    favorito = datos["favorito"].replace("-", "\\-")
-    jugada = [str(j).replace("-", "\\-") for j in datos["jugada"]]
+    loteria = md_escape(datos["loteria"])
+    sorteo = md_escape(datos["sorteo"])
+    favorito = md_escape(datos["favorito"])
+    jugada = [md_escape(str(j)) for j in datos["jugada"]]
     hora = datetime.now(ZoneInfo("America/Caracas")).strftime("%I:%M %p")
     # Calcular margen dinámico
     margen_inicio, margen_final = calcular_margen(datos["hora_tope"], str(datos["intervalo"]))
