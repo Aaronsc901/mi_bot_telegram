@@ -24,6 +24,8 @@ def scrape_loteria(url):
     resultados = []
 
     items = soup.find_all("li", class_="step-item")
+    print("Items encontrados:", len(items))
+
 
     for item in items:
         hora_tag = item.find("h4")
