@@ -19,6 +19,38 @@ MENSAJE_FIJO_ID = None
 # Funciones utilitarias
 # -------------------------------
 
+def obtener_numeros_salidos_por_tipo(tipo):
+    url = "https://raw.githubusercontent.com/Aaronsc901/animalitos_data/master/resultados_animalitos.json"
+    data = requests.get(url).json()
+    numeros = set()
+    tipo = tipo.lower()
+
+    # Guacharo Activo
+    if "guacharo" in tipo:
+        for item in data.get("guacharo_activo", []):
+            num = item["numero"]
+            if num.isdigit():
+                numeros.add(num)
+
+    # Lotto Activo / La Granjita
+    elif "lotto" in tipo or "granjita" in tipo:
+        for item in data.get("lotto_activo", []):
+            num = item["numero"]
+            if num.isdigit():
+                numeros.add(num)
+
+        for item in data.get("la_granjita", []):
+            num = item["numero"]
+            if num.isdigit():
+                numeros.add(num)
+
+    # Ruleta Royal → NO validar
+    elif "ruleta" in tipo:
+        return set()
+
+    return numeros
+
+
 def md_escape(text: str) -> str:
     especiales = r"_*[]()~`>#+-=|{}.!"
     for c in especiales:
@@ -110,6 +142,25 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     hora = datetime.now(ZoneInfo("America/Caracas")).strftime("%I:%M %p")
     # Calcular margen dinámico
     margen_inicio, margen_final = calcular_margen(datos["hora_tope"], str(datos["intervalo"]))
+    # Calculamos que tal todo
+    numeros_salidos = obtener_numeros_salidos_por_tipo(tipo)
+    # Si es Ruleta Royal → no validar
+    if len(numeros_salidos) == 0 and "ruleta" in tipo.lower():
+        pass  # No hacer nada
+    else:
+        # Jugada original sin escape
+        jugada_numeros = [str(j) for j in datos["jugada"]]
+        # Buscar repetidos
+        repetidos = [n for n in jugada_numeros if n in numeros_salidos]
+
+    if repetidos:
+        await query.answer(
+            f"⚠️ No se puede enviar la jugada.\nEstos números ya salieron hoy: {', '.join(repetidos)}",
+            show_alert=True
+        )
+        return
+
+
     # Si ambas horas son iguales, mostrar solo una
     if margen_inicio == margen_final:
         sorteo_texto = f"`{margen_inicio}`"
