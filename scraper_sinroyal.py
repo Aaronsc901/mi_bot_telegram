@@ -53,20 +53,30 @@ def subir_a_github(data):
         "Content-Type": "application/json"
     }
 
+    # 1. Obtener SHA actual (si existe)
     r = requests.get(url, headers=headers)
-    sha = r.json()["sha"] if r.status_code == 200 else None
 
+    if r.status_code == 200:
+        sha = r.json().get("sha")
+    else:
+        sha = None  # Archivo no existe
+
+    # 2. Crear payload
     payload = {
         "message": "Actualización automática de resultados animalitos",
         "content": contenido_b64
     }
 
     if sha:
-        payload["sha"] = sha
+        payload["sha"] = sha  # NECESARIO para evitar error 409
 
+    # 3. Subir archivo
     r = requests.put(url, json=payload, headers=headers)
 
-    print("✔ Archivo actualizado en GitHub" if r.status_code in [200, 201] else "❌ Error al subir:", r.text)
+    if r.status_code in [200, 201]:
+        print("✔ Archivo actualizado en GitHub")
+    else:
+        print("❌ Error al subir:", r.text)
 
 if __name__ == "__main__":
     data = {
