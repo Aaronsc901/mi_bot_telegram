@@ -3,6 +3,30 @@ from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandle
 import os
 import requests
 
+# -------------------------------
+# Funciones utilitarias
+# -------------------------------
+
+def md_escape(text: str) -> str:
+    especiales = r"_*[]()~`>#+-=|{}.!"
+    for c in especiales:
+        text = text.replace(c, f"\\{c}")
+    return text
+
+from time import time
+CACHE = {"data": None, "timestamp": 0}
+
+def obtener_datos():
+    ahora = time()
+    if CACHE["data"] and ahora - CACHE["timestamp"] < 30:
+        return CACHE["data"]
+
+    response = requests.get(URL_DATOS)
+    CACHE["data"] = response.json()
+    CACHE["timestamp"] = ahora
+    return CACHE["data"]
+
+
 TOKEN = os.getenv("TOKEN")
 
 # Grupo donde SÍ funciona el bot
@@ -81,9 +105,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     # Leer datos desde GitHub
-    response = requests.get(URL_DATOS)
-    datos = response.json()
-
+    datos = obtener_datos()
     loteria = datos["loteria"].replace("-", "\\-")
     sorteo = datos["sorteo"].replace("-", "\\-")
     favorito = datos["favorito"].replace("-", "\\-")
