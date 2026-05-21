@@ -1,6 +1,293 @@
 {
-    "fecha": "2026-05-21 20:34:58",
-    "guacharo_activo": [],
-    "la_granjita": [],
-    "lotto_activo": []
+    "fecha": "2026-05-21 20:35:10",
+    "guacharo_activo": [
+        {
+            "hora": "8:00 am",
+            "numero": "17"
+        },
+        {
+            "hora": "9:00 am",
+            "numero": "74"
+        },
+        {
+            "hora": "10:00 am",
+            "numero": "70"
+        },
+        {
+            "hora": "11:00 am",
+            "numero": "53"
+        },
+        {
+            "hora": "12:00 pm",
+            "numero": "66"
+        },
+        {
+            "hora": "1:00 pm",
+            "numero": "52"
+        },
+        {
+            "hora": "2:00 pm",
+            "numero": "64"
+        },
+        {
+            "hora": "3:00 pm",
+            "numero": "34"
+        },
+        {
+            "hora": "4:00 pm",
+            "numero": "2"
+        },
+        {
+            "hora": "5:00 pm",
+            "numero": "Próximo"
+        },
+        {
+            "hora": "6:00 pm",
+            "numero": "Pendiente"
+        },
+        {
+            "hora": "7:00 pm",
+            "numero": "Pendiente"
+        },
+        {
+            "hora": "8:00 am",
+            "numero": "34"
+        },
+        {
+            "hora": "9:00 am",
+            "numero": "55"
+        },
+        {
+            "hora": "10:00 am",
+            "numero": "6"
+        },
+        {
+            "hora": "11:00 am",
+            "numero": "71"
+        },
+        {
+            "hora": "12:00 pm",
+            "numero": "64"
+        },
+        {
+            "hora": "1:00 pm",
+            "numero": "46"
+        },
+        {
+            "hora": "2:00 pm",
+            "numero": "50"
+        },
+        {
+            "hora": "3:00 pm",
+            "numero": "62"
+        },
+        {
+            "hora": "4:00 pm",
+            "numero": "56"
+        },
+        {
+            "hora": "5:00 pm",
+            "numero": "31"
+        },
+        {
+            "hora": "6:00 pm",
+            "numero": "36"
+        },
+        {
+            "hora": "7:00 pm",
+            "numero": "33"
+        }
+    ],
+    "la_granjita": [
+        {
+            "hora": "8:00 am",
+            "numero": "35"
+        },
+        {
+            "hora": "9:00 am",
+            "numero": "00"
+        },
+        {
+            "hora": "10:00 am",
+            "numero": "19"
+        },
+        {
+            "hora": "11:00 am",
+            "numero": "30"
+        },
+        {
+            "hora": "12:00 pm",
+            "numero": "36"
+        },
+        {
+            "hora": "1:00 pm",
+            "numero": "25"
+        },
+        {
+            "hora": "2:00 pm",
+            "numero": "1"
+        },
+        {
+            "hora": "3:00 pm",
+            "numero": "16"
+        },
+        {
+            "hora": "4:00 pm",
+            "numero": "0"
+        },
+        {
+            "hora": "5:00 pm",
+            "numero": "Próximo"
+        },
+        {
+            "hora": "6:00 pm",
+            "numero": "Pendiente"
+        },
+        {
+            "hora": "7:00 pm",
+            "numero": "Pendiente"
+        },
+        {
+            "hora": "8:00 am",
+            "numero": "25"
+        },
+        {
+            "hora": "9:00 am",
+            "numero": "30"
+        },
+        {
+            "hora": "10:00 am",
+            "numero": "2"
+        },
+        {
+            "hora": "11:00 am",
+            "numero": "14"
+        },
+        {
+            "hora": "12:00 pm",
+            "numero": "10"
+        },
+        {
+            "hora": "1:00 pm",
+            "numero": "00"
+        },
+        {
+            "hora": "2:00 pm",
+            "numero": "18"
+        },
+        {
+            "hora": "3:00 pm",
+            "numero": "20"
+        },
+        {
+            "hora": "4:00 pm",
+            "numero": "27"
+        },
+        {
+            "hora": "5:00 pm",
+            "numero": "12"
+        },
+        {
+            "hora": "6:00 pm",
+            "numero": "12"
+        },
+        {
+            "hora": "7:00 pm",
+            "numero": "29"
+        }
+    ],
+    "lotto_activo": [
+        {
+            "hora": "9:00 am",
+            "numero": "30"
+        },
+        {
+            "hora": "10:00 am",
+            "numero": "1"
+        },
+        {
+            "hora": "11:00 am",
+            "numero": "00"
+        },
+        {
+            "hora": "12:00 pm",
+            "numero": "22"
+        },
+        {
+            "hora": "1:00 pm",
+            "numero": "10"
+        },
+        {
+            "hora": "2:00 pm",
+            "numero": "17"
+        },
+        {
+            "hora": "3:00 pm",
+            "numero": "32"
+        },
+        {
+            "hora": "4:00 pm",
+            "numero": "11"
+        },
+        {
+            "hora": "5:00 pm",
+            "numero": "Próximo"
+        },
+        {
+            "hora": "6:00 pm",
+            "numero": "Pendiente"
+        },
+        {
+            "hora": "7:00 pm",
+            "numero": "Pendiente"
+        },
+        {
+            "hora": "8:00 am",
+            "numero": "-"
+        },
+        {
+            "hora": "9:00 am",
+            "numero": "2"
+        },
+        {
+            "hora": "10:00 am",
+            "numero": "15"
+        },
+        {
+            "hora": "11:00 am",
+            "numero": "6"
+        },
+        {
+            "hora": "12:00 pm",
+            "numero": "31"
+        },
+        {
+            "hora": "1:00 pm",
+            "numero": "28"
+        },
+        {
+            "hora": "2:00 pm",
+            "numero": "29"
+        },
+        {
+            "hora": "3:00 pm",
+            "numero": "4"
+        },
+        {
+            "hora": "4:00 pm",
+            "numero": "3"
+        },
+        {
+            "hora": "5:00 pm",
+            "numero": "32"
+        },
+        {
+            "hora": "6:00 pm",
+            "numero": "32"
+        },
+        {
+            "hora": "7:00 pm",
+            "numero": "7"
+        }
+    ]
 }
