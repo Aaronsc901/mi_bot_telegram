@@ -14,7 +14,7 @@ REPO = "mi_bot_telegram"
 FILE_PATH = "resultados_tuazar.json"
 
 # Token seguro desde variable de entorno
-TOKEN = os.getenv("GITHUB_TOKEN")
+TOKENX = os.getenv("GITHUB_TOKEN")
 
 if not TOKEN:
     raise Exception("ERROR: La variable de entorno GITHUB_TOKEN no está definida.")
