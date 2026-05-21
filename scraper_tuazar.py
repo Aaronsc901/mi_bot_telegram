@@ -27,6 +27,8 @@ URL_GUACHARO = "https://www.tuazar.com/resultados/animalitos/guacharo-activo/"
 
 def scrape_tuazar(url):
     response = requests.get(url, timeout=10)
+    print("HTML recibido:", response.text[:500])
+
     soup = BeautifulSoup(response.text, "html.parser")
 
     resultados = []
