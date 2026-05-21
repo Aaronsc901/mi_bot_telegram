@@ -3,6 +3,18 @@ from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandle
 import os
 import requests
 
+TOKEN = os.getenv("TOKEN")
+
+# Grupo donde SÍ funciona el bot
+GRUPO_PERMITIDO = -1002793980909  # <-- tu ID de grupo
+
+# URL RAW del JSON
+URL_DATOS = "https://raw.githubusercontent.com/Aaronsc901/mi_bot_telegram/master/datos.json"
+
+# Variable global para mantener un solo mensaje
+MENSAJE_FIJO_ID = None
+
+
 # -------------------------------
 # Funciones utilitarias
 # -------------------------------
@@ -25,18 +37,6 @@ def obtener_datos():
     CACHE["data"] = response.json()
     CACHE["timestamp"] = ahora
     return CACHE["data"]
-
-
-TOKEN = os.getenv("TOKEN")
-
-# Grupo donde SÍ funciona el bot
-GRUPO_PERMITIDO = -1002793980909  # <-- tu ID de grupo
-
-# URL RAW del JSON
-URL_DATOS = "https://raw.githubusercontent.com/Aaronsc901/mi_bot_telegram/master/datos.json"
-
-# Variable global para mantener un solo mensaje
-MENSAJE_FIJO_ID = None
 
 
 # -------------------------------
