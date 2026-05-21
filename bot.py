@@ -92,6 +92,12 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     hora = datetime.now(ZoneInfo("America/Caracas")).strftime("%I:%M %p")
     # Calcular margen dinámico
     margen_inicio, margen_final = calcular_margen(datos["hora_tope"], str(datos["intervalo"]))
+    # Si ambas horas son iguales, mostrar solo una
+    if margen_inicio == margen_final:
+        sorteo_texto = f"`{margen_inicio}`"
+    else:
+        sorteo_texto = f"`{margen_inicio} - {margen_final}`"
+
     # Construir jugada dinámica con MarkdownV2
     jugada_texto = " \\- ".join([f"*{j}*" for j in jugada])
 
@@ -104,7 +110,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🔥 *ACTUALIZACIÓN DE JUGADA* 🔥\n"
         f"📅 *Última actualización:* `{hora}`\n\n"
         f"🎯 *Lotería:* *{loteria}*\n"
-        f"🕒 *Sorteo:* `{margen_inicio} - {margen_final}`\n"
+        f"🕒 *Sorteo:* {sorteo_texto}\n"
         f"🐾 *Favorito:* *{favorito}*\n\n"
         "🔢 *Jugada del momento:*\n"
         f"{jugada_texto}"
