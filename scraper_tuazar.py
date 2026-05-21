@@ -1,9 +1,29 @@
 import requests
 from bs4 import BeautifulSoup
 import json
+import base64
 from datetime import datetime
+import os
+
+# -----------------------------------------
+# CONFIGURACIÓN
+# -----------------------------------------
+
+GITHUB_USER = "Aaronsc901"
+REPO = "mi_bot_telegram"
+FILE_PATH = "resultados_tuazar.json"
+
+# Token seguro desde variable de entorno
+TOKEN = os.getenv("GITHUB_TOKEN")
+
+if not TOKEN:
+    raise Exception("ERROR: La variable de entorno GITHUB_TOKEN no está definida.")
 
 URL_GUACHARO = "https://www.tuazar.com/resultados/animalitos/guacharo-activo/"
+
+# -----------------------------------------
+# SCRAPING DE TUAZAR
+# -----------------------------------------
 
 def scrape_tuazar(url):
     response = requests.get(url, timeout=10)
@@ -11,21 +31,16 @@ def scrape_tuazar(url):
 
     resultados = []
 
-    # Cada bloque de sorteo está en filas tipo:
-    # "Animalito Guacharo Activo 17 - PAVO 8:00 AM"
     filas = soup.find_all("div", class_="col-12 col-md-6 col-lg-4 mb-3")
 
     for fila in filas:
         texto = fila.get_text(" ", strip=True)
-
-        # Ejemplo de texto:
-        # "Animalito Guacharo Activo 17 - PAVO 8:00 AM"
         partes = texto.split()
 
         try:
-            numero = partes[-3]      # 17
-            animal = partes[-2]      # PAVO
-            hora = partes[-1]        # 8:00 AM
+            numero = partes[-3]
+            animal = partes[-2]
+            hora = partes[-1]
         except:
             continue
 
@@ -37,16 +52,54 @@ def scrape_tuazar(url):
 
     return resultados
 
+# -----------------------------------------
+# SUBIR ARCHIVO A GITHUB
+# -----------------------------------------
 
-def guardar_json(data, archivo="resultados_tuazar.json"):
-    with open(archivo, "w", encoding="utf-8") as f:
-        json.dump({
-            "fecha": datetime.now().strftime("%Y-%m-%d"),
-            "resultados": data
-        }, f, indent=4, ensure_ascii=False)
+def subir_a_github(data):
+    url = f"https://api.github.com/repos/{GITHUB_USER}/{REPO}/contents/{FILE_PATH}"
 
+    contenido = json.dumps(data, indent=4, ensure_ascii=False)
+    contenido_b64 = base64.b64encode(contenido.encode()).decode()
+
+    headers = {
+        "Authorization": f"token {TOKEN}",
+        "Content-Type": "application/json"
+    }
+
+    r = requests.get(url, headers=headers)
+
+    if r.status_code == 200:
+        sha = r.json()["sha"]
+    else:
+        sha = None
+
+    payload = {
+        "message": "Actualización automática de resultados TuAzar",
+        "content": contenido_b64
+    }
+
+    if sha:
+        payload["sha"] = sha
+
+    r = requests.put(url, json=payload, headers=headers)
+
+    if r.status_code in [200, 201]:
+        print("✔ Archivo actualizado en GitHub")
+    else:
+        print("❌ Error al subir:", r.text)
+
+# -----------------------------------------
+# MAIN
+# -----------------------------------------
 
 if __name__ == "__main__":
-    data = scrape_tuazar(URL_GUACHARO)
-    guardar_json(data)
-    print("Scraping completado y guardado en resultados_tuazar.json")
+    resultados = scrape_tuazar(URL_GUACHARO)
+
+    data = {
+        "fecha": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "resultados": resultados
+    }
+
+    subir_a_github(data)
+    print("Scraping completado.")
