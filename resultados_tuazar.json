@@ -1,5 +1,5 @@
 {
-    "fecha": "2026-05-21 20:01:28",
+    "fecha": "2026-05-21 20:01:49",
     "resultados": [
         {
             "hora": "8:00 am",
@@ -43,12 +43,12 @@
         },
         {
             "hora": "4:00 pm",
-            "numero": "Próximo",
-            "animal": ""
+            "numero": "Sorteo",
+            "animal": "en curso"
         },
         {
             "hora": "5:00 pm",
-            "numero": "Pendiente",
+            "numero": "Próximo",
             "animal": ""
         },
         {
