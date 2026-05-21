@@ -6,7 +6,7 @@ from datetime import datetime
 import os
 
 GITHUB_USER = "Aaronsc901"
-REPO = "mi_bot_telegram"
+REPO = "animalitos_data"
 FILE_PATH = "resultados_animalitos.json"
 
 TOKEN = os.getenv("TOKENX")
