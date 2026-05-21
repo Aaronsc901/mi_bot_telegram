@@ -13,9 +13,9 @@ TOKEN = os.getenv("TOKENX")
 if not TOKEN:
     raise Exception("ERROR: La variable de entorno TOKENX no está definida.")
 
-URL_GUACHARO = "https://loteriadehoy.com/resultados/animalitos/guacharo-activo/"
-URL_GRANJITA = "https://loteriadehoy.com/resultados/animalitos/la-granjita/" 
-URL_LOTTO = "https://loteriadehoy.com/resultados/animalitos/lotto-activo/"
+URL_GUACHARO = "https://www.lottoresultados.com/resultados/animalitos/guacharo-activo/"
+URL_GRANJITA = "https://www.lottoresultados.com/resultados/animalitos/la-granjita/" 
+URL_LOTTO = "https://www.lottoresultados.com/resultados/animalitos/lotto-activo/"
 
 def scrape_loteria(url):
     response = requests.get(url, timeout=10)
