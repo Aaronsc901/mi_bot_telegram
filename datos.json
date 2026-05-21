@@ -1,8 +1,8 @@
 {
-  "loteria": "LOTTO ACTIVO/ LA GRANJITA",
+  "loteria": "RULETA ROYAL",
   "sorteo": "11:30-3:30PM",
-  "hora_tope": "13:00",
-  "favorito": "ALACRAN",
-  "jugada": ["04", "14", "28"],
-  "intervalo": "60"
+  "hora_tope": "17:30",
+  "favorito": "IGUANA",
+  "jugada": ["24", "09", "0"],
+  "intervalo": "30"
 }
