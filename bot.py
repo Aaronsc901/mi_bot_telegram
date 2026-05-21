@@ -35,7 +35,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Callback del botón
 # -------------------------------
 
-MENSAJE_FIJO_ID = None
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -101,10 +100,6 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Construir jugada dinámica con MarkdownV2
     jugada_texto = " \\- ".join([f"*{j}*" for j in jugada])
 
-
-
-
- 
 
     mensaje = (
         "🔥 *ACTUALIZACIÓN DE JUGADA* 🔥\n"
