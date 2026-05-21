@@ -1,5 +1,5 @@
 {
-    "fecha": "2026-05-21 22:01:38",
+    "fecha": "2026-05-21 22:02:04",
     "guacharo_activo": [
         {
             "hora": "8:00 am",
@@ -43,11 +43,11 @@
         },
         {
             "hora": "6:00 pm",
-            "numero": "Próximo"
+            "numero": "Sorteo"
         },
         {
             "hora": "7:00 pm",
-            "numero": "Pendiente"
+            "numero": "Próximo"
         },
         {
             "hora": "8:00 am",
@@ -141,11 +141,11 @@
         },
         {
             "hora": "6:00 pm",
-            "numero": "Próximo"
+            "numero": "Sorteo"
         },
         {
             "hora": "7:00 pm",
-            "numero": "Pendiente"
+            "numero": "Próximo"
         },
         {
             "hora": "8:00 am",
@@ -235,11 +235,11 @@
         },
         {
             "hora": "6:00 pm",
-            "numero": "Próximo"
+            "numero": "Sorteo"
         },
         {
             "hora": "7:00 pm",
-            "numero": "Pendiente"
+            "numero": "Próximo"
         },
         {
             "hora": "8:00 am",
