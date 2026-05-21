@@ -92,8 +92,6 @@ def calcular_margen(hora_tope_str, intervalo):
         margen_final.strftime("%I:%M %p")
     )
 
-    return inicio_str, final_str
-
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global MENSAJE_FIJO_ID
     query = update.callback_query
@@ -107,7 +105,6 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Leer datos desde GitHub
     datos = obtener_datos()
     loteria = md_escape(datos["loteria"])
-    sorteo = md_escape(datos["sorteo"])
     favorito = md_escape(datos["favorito"])
     jugada = [md_escape(str(j)) for j in datos["jugada"]]
     hora = datetime.now(ZoneInfo("America/Caracas")).strftime("%I:%M %p")
