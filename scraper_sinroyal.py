@@ -14,7 +14,7 @@ if not TOKEN:
     raise Exception("ERROR: La variable de entorno TOKENX no está definida.")
 
 URL_GUACHARO = "https://www.lottoresultados.com/resultados/animalitos/guacharo-activo/"
-URL_GRANJITA = "https://www.lottoresultados.com/resultados/animalitos/la-granjita/" 
+URL_GRANJITA = "https://www.lottoresultados.com/resultados/animalitos/la-granjita/"
 URL_LOTTO = "https://www.lottoresultados.com/resultados/animalitos/lotto-activo/"
 
 # ---------------------------------------------------------
@@ -120,14 +120,4 @@ def subir_a_github(data):
     if sha:
         payload["sha"] = sha
 
-    r = requests.put(url, json=payload, headers=headers)
-
-# ---------------------------------------------------------
-# MAIN
-# ---------------------------------------------------------
-
-if __name__ == "__main__":
-    data = {
-        "fecha": (datetime.utcnow() - timedelta(hours=4)).strftime("%Y-%m-%d %H:%M:%S"),
-        "guacharo_activo": scrape_loteria(URL_GUACHARO),
-        "la_granjita": scrape_loteria(URL_GRAN
+    requests.put(url
