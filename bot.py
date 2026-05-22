@@ -6,7 +6,7 @@ import requests
 TOKEN = os.getenv("TOKEN")
 
 # Grupo donde SÍ funciona el bot
-GRUPO_PERMITIDO = -6730457782 #-1002793980909  # <-- tu ID de grupo
+GRUPO_PERMITIDO = -1002793980909  # <-- tu ID de grupo
 
 # URL RAW del JSON
 URL_DATOS = "https://raw.githubusercontent.com/Aaronsc901/mi_bot_telegram/master/datos.json"
@@ -143,14 +143,14 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Calcular margen dinámico
     margen_inicio, margen_final = calcular_margen(datos["hora_tope"], str(datos["intervalo"]))
     # Calculamos que tal todo
-    tipo = datos["loteria"]
-    jugada_numeros = [str(j) for j in datos["jugada"]]
-    repetidos = validar_jugada(tipo, jugada_numeros)
-    if repetidos:
-        await query.answer(
-            f"⚠️ No se puede enviar la jugada.\nEstos números ya salieron hoy: {', '.join(repetidos)}",show_alert=True
-        )
-        return
+    #tipo = datos["loteria"]
+    #jugada_numeros = [str(j) for j in datos["jugada"]]
+    #repetidos = validar_jugada(tipo, jugada_numeros)
+    #if repetidos:
+     #   await query.answer(
+      #      f"⚠️ No se puede enviar la jugada.\nEstos números ya salieron hoy: {', '.join(repetidos)}",show_alert=True
+       # )
+        #return
 
     # Si ambas horas son iguales, mostrar solo una
     if margen_inicio == margen_final:
