@@ -18,17 +18,16 @@ URL_GRANJITA = "https://www.lottoresultados.com/resultados/animalitos/la-granjit
 URL_LOTTO = "https://www.lottoresultados.com/resultados/animalitos/lotto-activo/"
 
 # ---------------------------------------------------------
-# FUNCIÓN QUE LIMPIA HORAS CONTAMINADAS
+# SCRAPER: DESCARTA LA PRIMERA JUGADA (día anterior)
 # ---------------------------------------------------------
 
 def scrape_loteria(url):
     response = requests.get(url, timeout=10)
     soup = BeautifulSoup(response.text, "html.parser")
 
-    resultados = []
-    horas_vistas = set()  # ← evita duplicados del día anterior
-
     items = soup.find_all("li", class_="step-item")
+
+    resultados = []
 
     for item in items:
         hora_tag = item.find("h4")
@@ -40,18 +39,22 @@ def scrape_loteria(url):
         if not hora or not texto:
             continue
 
-        # Si ya vimos esta hora → es del día anterior → descartar
-        if hora in horas_vistas:
-            continue
-
-        horas_vistas.add(hora)
-
         numero = texto.split(" ", 1)[0]
+
+        # Ignorar "Próximo" y "Pendiente"
+        if numero.lower() in ["próximo", "pendiente"]:
+            continue
 
         resultados.append({
             "hora": hora,
             "numero": numero
         })
+
+    # -----------------------------------------------------
+    # DESCARTAR LA PRIMERA JUGADA (contaminación del día anterior)
+    # -----------------------------------------------------
+    if len(resultados) > 1:
+        resultados = resultados[1:]
 
     return resultados
 
@@ -70,7 +73,6 @@ def subir_a_github(data):
         "Content-Type": "application/json"
     }
 
-    # Obtener SHA actual
     r = requests.get(url, headers=headers)
     sha = r.json().get("sha") if r.status_code == 200 else None
 
