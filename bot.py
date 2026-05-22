@@ -5,8 +5,19 @@ import requests
 
 TOKEN = os.getenv("TOKEN")
 
-# Grupo donde SÍ funciona el bot
-GRUPO_PERMITIDO = -1002793980909  # <-- tu ID de grupo
+# -------------------------------
+# CONFIGURACIÓN DE GRUPOS
+# -------------------------------
+
+MODO_TEST = True  # Cambia a False cuando quieras usar el grupo real
+
+GRUPO_REAL_ID = -1002793980909          
+GRUPO_TEST_ID = -5197810505          
+
+def grupo_permitido(chat_id):
+    if MODO_TEST:
+        return chat_id == GRUPO_TEST_ID
+    return chat_id == GRUPO_REAL_ID
 
 # URL RAW del JSON
 URL_DATOS = "https://raw.githubusercontent.com/Aaronsc901/mi_bot_telegram/master/datos.json"
