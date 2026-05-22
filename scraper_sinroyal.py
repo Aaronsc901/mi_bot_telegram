@@ -127,8 +127,11 @@ def subir_a_github(data):
 # ---------------------------------------------------------
 
 if __name__ == "__main__":
+    # CORRECTO: fecha con paréntesis bien cerrados
+    fecha_ve = (datetime.utcnow() - timedelta(hours=4)).strftime("%Y-%m-%d %H:%M:%S")
+
     data = {
-        "fecha": (datetime.utcnow() - timedelta(hours=4)).strftime("%Y-%m-%d %H:%M:%S"),
+        "fecha": fecha_ve,
         "guacharo_activo": scrape_loteria(URL_GUACHARO),
         "la_granjita": scrape_loteria(URL_GRANJITA),
         "lotto_activo": scrape_loteria(URL_LOTTO)
