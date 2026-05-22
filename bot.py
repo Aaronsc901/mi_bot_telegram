@@ -9,17 +9,18 @@ TOKEN = os.getenv("TOKEN")
 # CONFIGURACIÓN DE GRUPOS
 # -------------------------------
 
-MODO_TEST = True  # Cambia a False cuando quieras usar el grupo real
+MODO_TEST = True  # Cambia a False para usar el grupo real
 
-GRUPO_REAL_ID = -1002793980909          
-GRUPO_TEST_ID = -5197810505          
+GRUPO_REAL_ID = -1002793980909          # Grupo oficial
+GRUPO_TEST_ID = -5197810505         # <-- PON AQUÍ TU GRUPO PRIVADO DE PRUEBAS
 
 def grupo_permitido(chat_id):
-    if MODO_TEST:
-        return chat_id == GRUPO_TEST_ID
-    return chat_id == GRUPO_REAL_ID
+    return chat_id == (GRUPO_TEST_ID if MODO_TEST else GRUPO_REAL_ID)
 
+
+# -------------------------------
 # URL RAW del JSON
+# -------------------------------
 URL_DATOS = "https://raw.githubusercontent.com/Aaronsc901/mi_bot_telegram/master/datos.json"
 
 # Variable global para mantener un solo mensaje
@@ -36,14 +37,12 @@ def obtener_numeros_salidos_por_tipo(tipo):
     numeros = set()
     tipo = tipo.lower()
 
-    # Guacharo Activo
     if "guacharo" in tipo:
         for item in data.get("guacharo_activo", []):
             num = item["numero"]
             if num.isdigit():
                 numeros.add(num)
 
-    # Lotto Activo / La Granjita
     elif "lotto" in tipo or "granjita" in tipo:
         for item in data.get("lotto_activo", []):
             num = item["numero"]
@@ -55,7 +54,6 @@ def obtener_numeros_salidos_por_tipo(tipo):
             if num.isdigit():
                 numeros.add(num)
 
-    # Ruleta Royal → NO validar
     elif "ruleta" in tipo:
         return set()
 
@@ -67,6 +65,7 @@ def md_escape(text: str) -> str:
     for c in especiales:
         text = text.replace(c, f"\\{c}")
     return text
+
 
 from time import time
 CACHE = {"data": None, "timestamp": 0}
@@ -86,7 +85,7 @@ def obtener_datos():
 # Comando /start
 # -------------------------------
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_chat.id != GRUPO_PERMITIDO:
+    if not grupo_permitido(update.effective_chat.id):
         return
 
     keyboard = [[InlineKeyboardButton("CONSULTAR JUGADA", callback_data="consulta")]]
@@ -101,7 +100,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # -------------------------------
 # Callback del botón
 # -------------------------------
-#from validacion import validar_jugada
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from validacion import validar_jugada
@@ -110,7 +108,6 @@ def calcular_margen(hora_tope_str, intervalo):
     ahora = datetime.now(ZoneInfo("America/Caracas"))
 
     if intervalo == "60":
-        # Próxima hora exacta
         margen_inicio = (
             ahora.replace(minute=0, second=0, microsecond=0)
             + timedelta(hours=1)
@@ -118,16 +115,12 @@ def calcular_margen(hora_tope_str, intervalo):
 
     elif intervalo == "30":
         minuto = ahora.minute
-
         if minuto <= 30:
-            # Próxima :30 de esta misma hora
             margen_inicio = ahora.replace(minute=30, second=0, microsecond=0)
         else:
-            # Próxima :30 de la siguiente hora
             siguiente_hora = ahora.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
             margen_inicio = siguiente_hora.replace(minute=30)
 
-    # Hora tope desde el JSON (24h)
     hora_tope = datetime.strptime(hora_tope_str, "%H:%M").time()
     margen_final = datetime.combine(ahora.date(), hora_tope)
 
@@ -136,43 +129,31 @@ def calcular_margen(hora_tope_str, intervalo):
         margen_final.strftime("%I:%M %p")
     )
 
+
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global MENSAJE_FIJO_ID
     query = update.callback_query
 
-    if query.message.chat.id != GRUPO_PERMITIDO:
-        await query.answer("Este bot solo funciona en el grupo autorizado.")
+    if not grupo_permitido(query.message.chat.id):
+        await query.answer("Bot en modo de pruebas.")
         return
 
     await query.answer()
 
-    # Leer datos desde GitHub
     datos = obtener_datos()
     loteria = md_escape(datos["loteria"])
     favorito = md_escape(datos["favorito"])
     jugada = [md_escape(str(j)) for j in datos["jugada"]]
     hora = datetime.now(ZoneInfo("America/Caracas")).strftime("%I:%M %p")
-    # Calcular margen dinámico
+
     margen_inicio, margen_final = calcular_margen(datos["hora_tope"], str(datos["intervalo"]))
-    # Calculamos que tal todo
-    tipo = datos["loteria"]
-    jugada_numeros = [str(j) for j in datos["jugada"]]
 
-    repetidos = validar_jugada(tipo, jugada_numeros)
-    if repetidos:
-        await query.answer(
-            f"⚠️ No se puede enviar la jugada.\nEstos números ya salieron hoy: {', '.join(repetidos)}",show_alert=True)
-        return
-
-    # Si ambas horas son iguales, mostrar solo una
     if margen_inicio == margen_final:
         sorteo_texto = f"`{margen_inicio}`"
     else:
         sorteo_texto = f"`{margen_inicio} - {margen_final}`"
 
-    # Construir jugada dinámica con MarkdownV2
     jugada_texto = " \\- ".join([f"*{j}*" for j in jugada])
-
 
     mensaje = (
         "🔥 *ACTUALIZACIÓN DE JUGADA* 🔥\n"
@@ -184,11 +165,12 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"{jugada_texto}"
     )
 
-    # Intentar editar el mensaje fijo
+    chat_destino = GRUPO_TEST_ID if MODO_TEST else GRUPO_REAL_ID
+
     if MENSAJE_FIJO_ID:
         try:
             await context.bot.edit_message_text(
-                chat_id=GRUPO_PERMITIDO,
+                chat_id=chat_destino,
                 message_id=MENSAJE_FIJO_ID,
                 text=mensaje,
                 parse_mode="MarkdownV2"
@@ -198,17 +180,17 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             print("Error al editar:", e)
             MENSAJE_FIJO_ID = None
 
-    # Crear mensaje nuevo
     msg = await context.bot.send_message(
-        chat_id=GRUPO_PERMITIDO,
+        chat_id=chat_destino,
         text=mensaje,
         parse_mode="MarkdownV2"
     )
 
     MENSAJE_FIJO_ID = msg.message_id
 
+
 # -------------------------------
-# Comando /id (opcional)
+# Comando /id
 # -------------------------------
 async def get_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"Chat ID: {update.effective_chat.id}")
@@ -219,6 +201,7 @@ async def reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
     MENSAJE_FIJO_ID = None
     await update.message.reply_text("ID reiniciado. El próximo mensaje será nuevo.")
 
+
 # -------------------------------
 # MAIN
 # -------------------------------
@@ -226,7 +209,7 @@ def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("id", get_id))  # opcional
+    app.add_handler(CommandHandler("id", get_id))
     app.add_handler(CommandHandler("reset", reset))
     app.add_handler(CallbackQueryHandler(handle_callback))
 
