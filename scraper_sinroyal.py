@@ -120,4 +120,18 @@ def subir_a_github(data):
     if sha:
         payload["sha"] = sha
 
-    requests.put(url
+    requests.put(url, json=payload, headers=headers)
+
+# ---------------------------------------------------------
+# MAIN
+# ---------------------------------------------------------
+
+if __name__ == "__main__":
+    data = {
+        "fecha": (datetime.utcnow() - timedelta(hours=4)).strftime("%Y-%m-%d %H:%M:%S"),
+        "guacharo_activo": scrape_loteria(URL_GUACHARO),
+        "la_granjita": scrape_loteria(URL_GRANJITA),
+        "lotto_activo": scrape_loteria(URL_LOTTO)
+    }
+
+    subir_a_github(data)
