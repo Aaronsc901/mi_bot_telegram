@@ -28,7 +28,7 @@ def convertir_hora(hora_str):
         return None
 
 # ---------------------------------------------------------
-# SCRAPER: SOLO ÚLTIMOS 5 RESULTADOS DEL DÍA
+# SCRAPER: SOLO RESULTADOS DEL DÍA (<= hora actual)
 # ---------------------------------------------------------
 
 def scrape_loteria(url):
@@ -39,6 +39,9 @@ def scrape_loteria(url):
 
     resultados = []
     horas_vistas = set()
+
+    hora_actual = datetime.now().time()
+    limite_minimo = datetime.strptime("08:00 AM", "%I:%M %p").time()
 
     for item in items:
         hora_tag = item.find("h4")
@@ -61,8 +64,8 @@ def scrape_loteria(url):
         if not hora_24:
             continue
 
-        # Filtrar solo horas >= 08:00 am
-        if hora_24 < datetime.strptime("08:00 AM", "%I:%M %p").time():
+        # Filtrar solo horas del día actual
+        if not (limite_minimo <= hora_24 <= hora_actual):
             continue
 
         # Evitar duplicados por hora (día anterior)
@@ -103,39 +106,4 @@ def subir_a_github(data):
     contenido_b64 = base64.b64encode(contenido.encode()).decode()
 
     headers = {
-        "Authorization": f"token {TOKEN}",
-        "Content-Type": "application/json"
-    }
-
-    r = requests.get(url, headers=headers)
-    sha = r.json().get("sha") if r.status_code == 200 else None
-
-    payload = {
-        "message": "Actualización automática de resultados animalitos",
-        "content": contenido_b64
-    }
-
-    if sha:
-        payload["sha"] = sha
-
-    r = requests.put(url, json=payload, headers=headers)
-
-    if r.status_code in [200, 201]:
-        print("✔ Archivo actualizado en GitHub")
-    else:
-        print("❌ Error al subir:", r.text)
-
-# ---------------------------------------------------------
-# MAIN
-# ---------------------------------------------------------
-
-if __name__ == "__main__":
-    data = {
-        "fecha": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "guacharo_activo": scrape_loteria(URL_GUACHARO),
-        "la_granjita": scrape_loteria(URL_GRANJITA),
-        "lotto_activo": scrape_loteria(URL_LOTTO)
-    }
-
-    subir_a_github(data)
-    print("Scraping completado.")
+        "Authorization": f"token {TOKEN
