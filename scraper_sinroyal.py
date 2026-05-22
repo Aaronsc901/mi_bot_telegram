@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import json
 import base64
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 
 GITHUB_USER = "Aaronsc901"
@@ -28,7 +28,7 @@ def convertir_hora(hora_str):
         return None
 
 # ---------------------------------------------------------
-# SCRAPER: SOLO RESULTADOS DEL DÍA (<= hora actual)
+# SCRAPER: SOLO RESULTADOS DEL DÍA (8am → hora_actual)
 # ---------------------------------------------------------
 
 def scrape_loteria(url):
@@ -40,7 +40,10 @@ def scrape_loteria(url):
     resultados = []
     horas_vistas = set()
 
-    hora_actual = datetime.now().time()
+    # Hora actual en Venezuela (UTC-4)
+    hora_actual = (datetime.utcnow() - timedelta(hours=4)).time()
+
+    # Límite mínimo del día
     limite_minimo = datetime.strptime("08:00 AM", "%I:%M %p").time()
 
     for item in items:
@@ -64,11 +67,11 @@ def scrape_loteria(url):
         if not hora_24:
             continue
 
-        # Filtrar solo horas del día actual
+        # Filtrar solo horas del día actual (8am → hora_actual)
         if not (limite_minimo <= hora_24 <= hora_actual):
             continue
 
-        # Evitar duplicados por hora (día anterior)
+        # Evitar duplicados por hora
         if hora in horas_vistas:
             continue
         horas_vistas.add(hora)
@@ -106,7 +109,7 @@ def subir_a_github(data):
     contenido_b64 = base64.b64encode(contenido.encode()).decode()
 
     headers = {
-        "Authorization": f"token {TOKEN}",   # ← AQUÍ ESTABA EL ERROR, YA CORREGIDO
+        "Authorization": f"token {TOKEN}",
         "Content-Type": "application/json"
     }
 
@@ -134,15 +137,13 @@ def subir_a_github(data):
 
 if __name__ == "__main__":
     data = {
-        "fecha": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "fecha": (datetime.utcnow() - timedelta(hours=4)).strftime("%Y-%m-%d %H:%M:%S"),
         "guacharo_activo": scrape_loteria(URL_GUACHARO),
         "la_granjita": scrape_loteria(URL_GRANJITA),
         "lotto_activo": scrape_loteria(URL_LOTTO)
     }
 
-    # -------------------------------
     # PRINT PARA VERIFICAR EN RAILWAY
-    # -------------------------------
     print("JSON FINAL GENERADO POR EL SCRAPER:")
     print(json.dumps(data, indent=4, ensure_ascii=False))
 
