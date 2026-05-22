@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import json
 import base64
-from datetime import datetime, timedelta
+from datetime import datetime
 import os
 
 GITHUB_USER = "Aaronsc901"
@@ -17,25 +17,22 @@ URL_GUACHARO = "https://www.lottoresultados.com/resultados/animalitos/guacharo-a
 URL_GRANJITA = "https://www.lottoresultados.com/resultados/animalitos/la-granjita/" 
 URL_LOTTO = "https://www.lottoresultados.com/resultados/animalitos/lotto-activo/"
 
-def convertir_hora(hora_str):
-    try:
-        return datetime.strptime(hora_str, "%I:%M %p").time()
-    except:
-        return None
+# ---------------------------------------------------------
+# FUNCIÓN QUE LIMPIA HORAS CONTAMINADAS
+# ---------------------------------------------------------
 
 def scrape_loteria(url):
     response = requests.get(url, timeout=10)
     soup = BeautifulSoup(response.text, "html.parser")
 
     resultados = []
-    vistos = set()
-    hoy = datetime.now().date()
+    horas_vistas = set()  # ← evita duplicados del día anterior
 
     items = soup.find_all("li", class_="step-item")
 
     for item in items:
         hora_tag = item.find("h4")
-        hora = hora_tag.get_text(strip=True) if hora_tag else None
+        hora = hora_tag.get_text(strip=True).lower() if hora_tag else None
 
         texto_tag = item.find("p", class_="step-text")
         texto = texto_tag.get_text(strip=True) if texto_tag else None
@@ -43,34 +40,24 @@ def scrape_loteria(url):
         if not hora or not texto:
             continue
 
-        hora_24 = convertir_hora(hora)
-        if not hora_24:
+        # Si ya vimos esta hora → es del día anterior → descartar
+        if hora in horas_vistas:
             continue
 
-        # Convertimos a datetime completo
-        fecha_hora = datetime.combine(hoy, hora_24)
-
-        # Filtrar resultados del día anterior
-        if fecha_hora.date() != hoy:
-            continue
-
-        # Evitar duplicados
-        if hora in vistos:
-            continue
-        vistos.add(hora)
+        horas_vistas.add(hora)
 
         numero = texto.split(" ", 1)[0]
 
         resultados.append({
             "hora": hora,
-            "hora_24": hora_24.strftime("%H:%M"),
             "numero": numero
         })
 
-    # Ordenar por hora
-    resultados.sort(key=lambda x: x["hora_24"])
-
     return resultados
+
+# ---------------------------------------------------------
+# SUBIR A GITHUB
+# ---------------------------------------------------------
 
 def subir_a_github(data):
     url = f"https://api.github.com/repos/{GITHUB_USER}/{REPO}/contents/{FILE_PATH}"
@@ -83,6 +70,7 @@ def subir_a_github(data):
         "Content-Type": "application/json"
     }
 
+    # Obtener SHA actual
     r = requests.get(url, headers=headers)
     sha = r.json().get("sha") if r.status_code == 200 else None
 
@@ -100,6 +88,10 @@ def subir_a_github(data):
         print("✔ Archivo actualizado en GitHub")
     else:
         print("❌ Error al subir:", r.text)
+
+# ---------------------------------------------------------
+# MAIN
+# ---------------------------------------------------------
 
 if __name__ == "__main__":
     data = {
