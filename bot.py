@@ -161,7 +161,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     loteria = md_escape(loteria_visible)
     favorito = md_escape(datos["favorito"])
     jugada = [md_escape(str(j)) for j in datos["jugada"]]
-    jugada_numeros = [str(j)) for j in datos["jugada"]]
+    jugada_numeros = [str(j) for j in datos["jugada"]]
 
     # Validación principal o doble
     if datos.get("validar_ambas", False):
