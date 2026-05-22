@@ -93,6 +93,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 #from validacion import validar_jugada
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
+from validacion import validar_jugada
 
 def calcular_margen(hora_tope_str, intervalo):
     ahora = datetime.now(ZoneInfo("America/Caracas"))
