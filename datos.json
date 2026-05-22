@@ -1,10 +1,17 @@
 {
-  "loteria": "lotto activo",
+  "loteria": "guacharo",
+  "loteria_visible": "Guacharo",
+  "validar_ambas": false,
+
   "sorteo": "11:30-3:30PM",
   "hora_tope": "19:00",
-  "favorito": "CERDO",
-  "jugada": ["21", "24", "15"],
-  "jugada_opcional": ["33", "12", "08"],
-  "loteria_opcional": "la granjita",
+
+  "favorito": "PAVO",
+  "jugada": ["17", "74", "70"],
+
+  "jugada_opcional": ["21", "24", "15"],
+  "loteria_opcional": "lotto activo",
+  "loteria_opcional_visible": "Lotto Activo y La Granjita",
+
   "intervalo": "60"
 }
