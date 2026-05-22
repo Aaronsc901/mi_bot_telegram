@@ -50,7 +50,6 @@ def scrape_loteria(url):
         hora = hora_tag.get_text(strip=True).lower()
         numero = texto_tag.get_text(strip=True).split(" ", 1)[0]
 
-        # Ignorar "Próximo" y "Pendiente"
         if numero.lower() in ["próximo", "pendiente"]:
             continue
 
@@ -67,13 +66,16 @@ def scrape_loteria(url):
     # ORDENAR por hora
     resultados.sort(key=lambda x: x["hora_24"])
 
-    # DETECTAR BLOQUE DE AYER:
-    # AYER empieza cuando la hora baja (ej: 7pm → 8am)
-    ayer = []
+    # DETECTAR EL ÚLTIMO SALTO (inicio real de AYER)
+    indice_ayer = None
     for i in range(1, len(resultados)):
         if resultados[i]["hora_24"] < resultados[i-1]["hora_24"]:
-            ayer = resultados[i:]
-            break
+            indice_ayer = i  # guardamos el último salto
+
+    if indice_ayer is None:
+        return []
+
+    ayer = resultados[indice_ayer:]
 
     # FILTRAR AYER 8am–11am
     hora_min = datetime.strptime("08:00 AM", "%I:%M %p").time()
@@ -84,11 +86,9 @@ def scrape_loteria(url):
         if hora_min <= r["hora_24"] <= hora_max
     ]
 
-    # Tomar exactamente 4 resultados (8am, 9am, 10am, 11am)
     if len(ayer_filtrado) < 4:
         return []
 
-    # Limpiar campos auxiliares
     return [
         {"hora": r["hora"], "numero": r["numero"]}
         for r in ayer_filtrado[:4]
