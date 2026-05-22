@@ -1,76 +1,39 @@
+import os
+import json
+import base64
+import requests
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
-import os
-import requests
+from validacion import validar_jugada
+
+# ---------------------------------------------------------
+# CONFIGURACIÓN GENERAL
+# ---------------------------------------------------------
 
 TOKEN = os.getenv("TOKEN")
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
-# -------------------------------
-# CONFIGURACIÓN DE GRUPOS
-# -------------------------------
+# URL API del archivo JSON
+GITHUB_API_URL = "https://api.github.com/repos/Aaronsc901/mi_bot_telegram/contents/datos.json"
 
-MODO_TEST = True  # Cambia a False para usar el grupo real
-
-GRUPO_REAL_ID = -1002793980909          # Grupo oficial
-GRUPO_TEST_ID = -5197810505             # Grupo de pruebas
+# Modo test / real
+MODO_TEST = True
+GRUPO_REAL_ID = -1002793980909
+GRUPO_TEST_ID = -5197810505
 
 def grupo_permitido(chat_id):
     return chat_id == (GRUPO_TEST_ID if MODO_TEST else GRUPO_REAL_ID)
 
-
-# -------------------------------
-# URL RAW del JSON
-# -------------------------------
-URL_DATOS = "https://raw.githubusercontent.com/Aaronsc901/mi_bot_telegram/master/datos.json"
-
-# Variable global para mantener un solo mensaje
+# Variables en memoria
 MENSAJE_FIJO_ID = None
+CACHE = {"data": None, "timestamp": 0}
 
 
-# -------------------------------
-# Funciones utilitarias
-# -------------------------------
-
-def obtener_numeros_salidos_por_tipo(tipo):
-    url = "https://raw.githubusercontent.com/Aaronsc901/animalitos_data/master/resultados_animalitos.json"
-    data = requests.get(url).json()
-    numeros = set()
-    tipo = tipo.lower()
-
-    if "guacharo" in tipo:
-        for item in data.get("guacharo_activo", []):
-            num = item["numero"]
-            if num.isdigit():
-                numeros.add(num)
-
-    elif "lotto" in tipo or "granjita" in tipo:
-        for item in data.get("lotto_activo", []):
-            num = item["numero"]
-            if num.isdigit():
-                numeros.add(num)
-
-        for item in data.get("la_granjita", []):
-            num = item["numero"]
-            if num.isdigit():
-                numeros.add(num)
-
-    elif "ruleta" in tipo:
-        return set()
-
-    return numeros
-
-
-def validar_ambas_loterias(jugada):
-    repetidos = set()
-
-    rep_lotto = validar_jugada("lotto activo", jugada)
-    repetidos.update(rep_lotto)
-
-    rep_granjita = validar_jugada("la granjita", jugada)
-    repetidos.update(rep_granjita)
-
-    return list(repetidos)
-
+# ---------------------------------------------------------
+# UTILIDADES
+# ---------------------------------------------------------
 
 def md_escape(text: str) -> str:
     especiales = r"_*[]()~`>#+-=|{}.!"
@@ -79,51 +42,55 @@ def md_escape(text: str) -> str:
     return text
 
 
-from time import time
-CACHE = {"data": None, "timestamp": 0}
+# ---------------------------------------------------------
+# LECTURA DEL JSON REMOTO (GitHub)
+# ---------------------------------------------------------
 
 def obtener_datos():
-    ahora = time()
-    if CACHE["data"] and ahora - CACHE["timestamp"] < 30:
-        return CACHE["data"]
+    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+    r = requests.get(GITHUB_API_URL, headers=headers).json()
 
-    response = requests.get(URL_DATOS)
-    CACHE["data"] = response.json()
-    CACHE["timestamp"] = ahora
-    return CACHE["data"]
+    contenido = base64.b64decode(r["content"]).decode()
+    datos = json.loads(contenido)
 
-
-# -------------------------------
-# Comando /start
-# -------------------------------
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not grupo_permitido(update.effective_chat.id):
-        return
-
-    keyboard = [[InlineKeyboardButton("CONSULTAR JUGADA", callback_data="consulta")]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    await update.message.reply_text(
-        "Presiona el botón para ver la jugada actual:",
-        reply_markup=reply_markup
-    )
+    datos["_sha"] = r["sha"]  # Guardamos el SHA para poder escribir luego
+    return datos
 
 
-# -------------------------------
-# Callback del botón
-# -------------------------------
-from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
-from validacion import validar_jugada
+# ---------------------------------------------------------
+# ESCRITURA DEL JSON REMOTO (GitHub)
+# ---------------------------------------------------------
+
+def guardar_datos(datos):
+    sha = datos.pop("_sha")  # SHA actual del archivo
+
+    nuevo_contenido = base64.b64encode(
+        json.dumps(datos, indent=2).encode()
+    ).decode()
+
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+
+    payload = {
+        "message": "Actualización automática del margen opcional",
+        "content": nuevo_contenido,
+        "sha": sha
+    }
+
+    requests.put(GITHUB_API_URL, headers=headers, json=payload)
+
+
+# ---------------------------------------------------------
+# CÁLCULO DE MARGEN PRINCIPAL
+# ---------------------------------------------------------
 
 def calcular_margen(hora_tope_str, intervalo):
     ahora = datetime.now(ZoneInfo("America/Caracas"))
 
     if intervalo == "60":
-        margen_inicio = (
-            ahora.replace(minute=0, second=0, microsecond=0)
-            + timedelta(hours=1)
-        )
+        margen_inicio = ahora.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
 
     elif intervalo == "30":
         minuto = ahora.minute
@@ -142,15 +109,35 @@ def calcular_margen(hora_tope_str, intervalo):
     )
 
 
-async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global MENSAJE_FIJO_ID
-    query = update.callback_query
+# ---------------------------------------------------------
+# COMANDO /start
+# ---------------------------------------------------------
 
-    if not grupo_permitido(query.message.chat.id):
-        await query.answer("Bot en modo de pruebas.")
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not grupo_permitido(update.effective_chat.id):
         return
 
+    keyboard = [[InlineKeyboardButton("CONSULTAR JUGADA", callback_data="consulta")]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await update.message.reply_text(
+        "Presiona el botón para ver la jugada actual:",
+        reply_markup=reply_markup
+    )
+
+
+# ---------------------------------------------------------
+# CALLBACK DEL BOTÓN
+# ---------------------------------------------------------
+
+async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global MENSAJE_FIJO_ID
+
+    query = update.callback_query
     await query.answer()
+
+    if not grupo_permitido(query.message.chat.id):
+        return
 
     datos = obtener_datos()
 
@@ -163,35 +150,73 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     jugada = [md_escape(str(j)) for j in datos["jugada"]]
     jugada_numeros = [str(j) for j in datos["jugada"]]
 
-    # Validación principal o doble
+    # Validación principal
     if datos.get("validar_ambas", False):
+        from validacion import validar_ambas_loterias
         repetidos = validar_ambas_loterias(jugada_numeros)
     else:
         repetidos = validar_jugada(loteria_tecnica, jugada_numeros)
 
-    # Si hay repetidos → usar jugada y lotería opcional
+    # Margen principal
+    margen_inicio, margen_final = calcular_margen(datos["hora_tope"], str(datos["intervalo"]))
+
+    ahora = datetime.now(ZoneInfo("America/Caracas"))
+    margen_final_dt = datetime.strptime(margen_final, "%I:%M %p").replace(
+        year=ahora.year, month=ahora.month, day=ahora.day, tzinfo=ZoneInfo("America/Caracas")
+    )
+
+    falta = margen_final_dt - ahora
+    activar_por_tiempo = falta.total_seconds() <= 3600
+
+    usar_opcional = False
+
+    # Activación por repetidos
     if repetidos:
+        usar_opcional = True
+
+    # Activación por tiempo
+    if activar_por_tiempo:
+        usar_opcional = True
+
+    # Activación por persistencia
+    margen_guardado = datos.get("margen_opcional_activado", None)
+    if margen_guardado:
+        activado_dt = datetime.fromisoformat(margen_guardado)
+        if ahora <= activado_dt + timedelta(hours=5):
+            usar_opcional = True
+        else:
+            datos["margen_opcional_activado"] = None
+            guardar_datos(datos)
+
+    # Si debemos usar la jugada opcional
+    if usar_opcional:
         jugada_opcional = datos.get("jugada_opcional", [])
         loteria_opcional_tecnica = datos.get("loteria_opcional", None)
         loteria_opcional_visible = datos.get("loteria_opcional_visible", loteria_opcional_tecnica)
 
         if jugada_opcional and loteria_opcional_tecnica:
-            # Validar opcional
+
+            # Validación opcional
             if datos.get("validar_ambas", False):
+                from validacion import validar_ambas_loterias
                 repetidos_opcional = validar_ambas_loterias(jugada_opcional)
             else:
                 repetidos_opcional = validar_jugada(loteria_opcional_tecnica, jugada_opcional)
 
             if not repetidos_opcional:
-                # Cambiar jugada y lotería
+
+                # Activar persistencia si no estaba activa
+                if not datos.get("margen_opcional_activado"):
+                    datos["margen_opcional_activado"] = ahora.isoformat()
+                    guardar_datos(datos)
+
+                activado_dt = datetime.fromisoformat(datos["margen_opcional_activado"])
+                margen_inicio = activado_dt.strftime("%I:%M %p")
+                margen_final = (activado_dt + timedelta(hours=5)).strftime("%I:%M %p")
+
                 jugada = [md_escape(str(j)) for j in jugada_opcional]
                 loteria = md_escape(loteria_opcional_visible)
 
-                await query.answer(
-                    f"⚠️ Atención: la jugada principal tenía números repetidos ({', '.join(repetidos)}).\n"
-                    f"Se usará la jugada y lotería opcional.",
-                    show_alert=True
-                )
             else:
                 await query.answer(
                     f"❌ No se puede enviar ninguna jugada.\n"
@@ -200,32 +225,15 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     show_alert=True
                 )
                 return
-        else:
-            await query.answer(
-                f"⚠️ No se puede enviar la jugada.\nEstos números ya salieron hoy: {', '.join(repetidos)}",
-                show_alert=True
-            )
-            return
-
-    # Hora actual
-    hora = datetime.now(ZoneInfo("America/Caracas")).strftime("%I:%M %p")
-
-    # Margen dinámico
-    margen_inicio, margen_final = calcular_margen(datos["hora_tope"], str(datos["intervalo"]))
-
-    if margen_inicio == margen_final:
-        sorteo_texto = f"`{margen_inicio}`"
-    else:
-        sorteo_texto = f"`{margen_inicio} - {margen_final}`"
 
     # Construcción del mensaje
     jugada_texto = " \\- ".join([f"*{j}*" for j in jugada])
 
     mensaje = (
         "🔥 *ACTUALIZACIÓN DE JUGADA* 🔥\n"
-        f"📅 *Última actualización:* `{hora}`\n\n"
+        f"📅 *Última actualización:* `{ahora.strftime('%I:%M %p')}`\n\n"
         f"🎯 *Lotería:* *{loteria}*\n"
-        f"🕒 *Sorteo:* {sorteo_texto}\n"
+        f"🕒 *Sorteo:* `{margen_inicio} - {margen_final}`\n"
         f"🐾 *Favorito:* *{favorito}*\n\n"
         "🔢 *Jugada del momento:*\n"
         f"{jugada_texto}"
@@ -243,8 +251,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode="MarkdownV2"
             )
             return
-        except Exception as e:
-            print("Error al editar:", e)
+        except:
             MENSAJE_FIJO_ID = None
 
     # Crear mensaje nuevo
@@ -257,9 +264,10 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     MENSAJE_FIJO_ID = msg.message_id
 
 
-# -------------------------------
-# Comando /id
-# -------------------------------
+# ---------------------------------------------------------
+# COMANDOS /id y /reset
+# ---------------------------------------------------------
+
 async def get_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"Chat ID: {update.effective_chat.id}")
 
@@ -267,12 +275,18 @@ async def get_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global MENSAJE_FIJO_ID
     MENSAJE_FIJO_ID = None
-    await update.message.reply_text("ID reiniciado. El próximo mensaje será nuevo.")
+
+    datos = obtener_datos()
+    datos["margen_opcional_activado"] = None
+    guardar_datos(datos)
+
+    await update.message.reply_text("Reiniciado. El próximo mensaje será nuevo.")
 
 
-# -------------------------------
+# ---------------------------------------------------------
 # MAIN
-# -------------------------------
+# ---------------------------------------------------------
+
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
