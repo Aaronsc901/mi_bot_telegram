@@ -6,7 +6,7 @@ import requests
 TOKEN = os.getenv("TOKEN")
 
 # Grupo donde SÍ funciona el bot
-GRUPO_PERMITIDO = 6730457782 #-1002793980909  # <-- tu ID de grupo
+GRUPO_PERMITIDO = -6730457782 #-1002793980909  # <-- tu ID de grupo
 
 # URL RAW del JSON
 URL_DATOS = "https://raw.githubusercontent.com/Aaronsc901/mi_bot_telegram/master/datos.json"
