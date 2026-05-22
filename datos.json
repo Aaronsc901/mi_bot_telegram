@@ -4,5 +4,7 @@
   "hora_tope": "19:00",
   "favorito": "CERDO",
   "jugada": ["21", "24", "15"],
+  "jugada_opcional": ["33", "12", "08"],
+  "loteria_opcional": "la granjita",
   "intervalo": "60"
 }
