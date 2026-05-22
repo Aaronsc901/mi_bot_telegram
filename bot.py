@@ -90,7 +90,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # -------------------------------
 # Callback del botón
 # -------------------------------
-from validacion import validar_jugada
+#from validacion import validar_jugada
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
