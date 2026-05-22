@@ -143,24 +143,10 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Calcular margen dinámico
     margen_inicio, margen_final = calcular_margen(datos["hora_tope"], str(datos["intervalo"]))
     # Calculamos que tal todo
+    tipo = datos["loteria"]
     numeros_salidos = obtener_numeros_salidos_por_tipo(tipo)
-    # Si es Ruleta Royal → no validar
-    if len(numeros_salidos) == 0 and "ruleta" in tipo.lower():
-        pass  # No hacer nada
-    else:
-        # Jugada original sin escape
-        jugada_numeros = [str(j) for j in datos["jugada"]]
-        # Buscar repetidos
-        repetidos = [n for n in jugada_numeros if n in numeros_salidos]
-
-    if repetidos:
-        await query.answer(
-            f"⚠️ No se puede enviar la jugada.\nEstos números ya salieron hoy: {', '.join(repetidos)}",
-            show_alert=True
-        )
-        return
-
-
+    
+    
     # Si ambas horas son iguales, mostrar solo una
     if margen_inicio == margen_final:
         sorteo_texto = f"`{margen_inicio}`"
