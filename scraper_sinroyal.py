@@ -28,7 +28,7 @@ def convertir_hora(hora_str):
         return None
 
 # ---------------------------------------------------------
-# SCRAPER: SOLO RESULTADOS DEL DÍA (8am → hora_actual)
+# SCRAPER: CAPTURAR RESULTADOS DE AYER (8am–11am)
 # ---------------------------------------------------------
 
 def scrape_loteria(url):
@@ -38,65 +38,61 @@ def scrape_loteria(url):
     items = soup.find_all("li", class_="step-item")
 
     resultados = []
-    horas_vistas = set()
 
-    # Hora actual en Venezuela (UTC-4)
-    hora_actual = (datetime.utcnow() - timedelta(hours=4)).time()
-
-    # Límite mínimo del día
-    limite_minimo = datetime.strptime("08:00 AM", "%I:%M %p").time()
-
+    # Convertir todos los resultados crudos
     for item in items:
         hora_tag = item.find("h4")
-        hora = hora_tag.get_text(strip=True).lower() if hora_tag else None
-
         texto_tag = item.find("p", class_="step-text")
-        texto = texto_tag.get_text(strip=True) if texto_tag else None
 
-        if not hora or not texto:
+        if not hora_tag or not texto_tag:
             continue
 
-        numero = texto.split(" ", 1)[0]
+        hora = hora_tag.get_text(strip=True).lower()
+        numero = texto_tag.get_text(strip=True).split(" ", 1)[0]
 
         # Ignorar "Próximo" y "Pendiente"
         if numero.lower() in ["próximo", "pendiente"]:
             continue
 
-        # Convertir hora
         hora_24 = convertir_hora(hora)
         if not hora_24:
             continue
 
-        # Filtrar solo horas del día actual (8am → hora_actual)
-        if not (limite_minimo <= hora_24 <= hora_actual):
-            continue
-
-        # Evitar duplicados por hora
-        if hora in horas_vistas:
-            continue
-        horas_vistas.add(hora)
-
         resultados.append({
             "hora": hora,
-            "hora_24": hora_24.strftime("%H:%M"),
+            "hora_24": hora_24,
             "numero": numero
         })
 
-    # Ordenar por hora
+    # ORDENAR por hora
     resultados.sort(key=lambda x: x["hora_24"])
 
-    # Tomar los últimos 5
-    resultados = resultados[-5:]
+    # DETECTAR BLOQUE DE AYER:
+    # AYER empieza cuando la hora baja (ej: 7pm → 8am)
+    ayer = []
+    for i in range(1, len(resultados)):
+        if resultados[i]["hora_24"] < resultados[i-1]["hora_24"]:
+            ayer = resultados[i:]
+            break
 
-    # Si no hay 5 → devolver vacío
-    if len(resultados) < 5:
+    # FILTRAR AYER 8am–11am
+    hora_min = datetime.strptime("08:00 AM", "%I:%M %p").time()
+    hora_max = datetime.strptime("11:00 AM", "%I:%M %p").time()
+
+    ayer_filtrado = [
+        r for r in ayer
+        if hora_min <= r["hora_24"] <= hora_max
+    ]
+
+    # Tomar exactamente 4 resultados (8am, 9am, 10am, 11am)
+    if len(ayer_filtrado) < 4:
         return []
 
-    # Eliminar campo auxiliar
-    for r in resultados:
-        del r["hora_24"]
-
-    return resultados
+    # Limpiar campos auxiliares
+    return [
+        {"hora": r["hora"], "numero": r["numero"]}
+        for r in ayer_filtrado[:4]
+    ]
 
 # ---------------------------------------------------------
 # SUBIR A GITHUB
@@ -117,7 +113,7 @@ def subir_a_github(data):
     sha = r.json().get("sha") if r.status_code == 200 else None
 
     payload = {
-        "message": "Actualización automática de resultados animalitos",
+        "message": "Actualización automática de resultados AYER (8–11am)",
         "content": contenido_b64
     }
 
@@ -125,11 +121,6 @@ def subir_a_github(data):
         payload["sha"] = sha
 
     r = requests.put(url, json=payload, headers=headers)
-
-    if r.status_code in [200, 201]:
-        print("✔ Archivo actualizado en GitHub")
-    else:
-        print("❌ Error al subir:", r.text)
 
 # ---------------------------------------------------------
 # MAIN
@@ -139,13 +130,4 @@ if __name__ == "__main__":
     data = {
         "fecha": (datetime.utcnow() - timedelta(hours=4)).strftime("%Y-%m-%d %H:%M:%S"),
         "guacharo_activo": scrape_loteria(URL_GUACHARO),
-        "la_granjita": scrape_loteria(URL_GRANJITA),
-        "lotto_activo": scrape_loteria(URL_LOTTO)
-    }
-
-    # PRINT PARA VERIFICAR EN RAILWAY
-    print("JSON FINAL GENERADO POR EL SCRAPER:")
-    print(json.dumps(data, indent=4, ensure_ascii=False))
-
-    subir_a_github(data)
-    print("Scraping completado.")
+        "la_granjita": scrape_loteria(URL_GRAN
