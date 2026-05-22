@@ -149,10 +149,11 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     tipo = datos["loteria"]
     jugada_numeros = [str(j) for j in datos["jugada"]]
     repetidos = validar_jugada(tipo, jugada_numeros)
-    if repetidos:
-        await query.answer(
-            f"⚠️ No se puede enviar la jugada.\nEstos números ya salieron hoy: {', '.join(repetidos)}",show_alert=True)
-        return
+    print("DEBUG REPETIDOS:", repetidos)
+    #if repetidos:
+        #await query.answer(
+            #f"⚠️ No se puede enviar la jugada.\nEstos números ya salieron hoy: {', '.join(repetidos)}",show_alert=True)
+        #return
 
     margen_inicio, margen_final = calcular_margen(datos["hora_tope"], str(datos["intervalo"]))
 
