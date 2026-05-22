@@ -12,7 +12,7 @@ TOKEN = os.getenv("TOKEN")
 MODO_TEST = True  # Cambia a False para usar el grupo real
 
 GRUPO_REAL_ID = -1002793980909          # Grupo oficial
-GRUPO_TEST_ID = -5197810505         # <-- PON AQUÍ TU GRUPO PRIVADO DE PRUEBAS
+GRUPO_TEST_ID = -5197810505             # Grupo de pruebas
 
 def grupo_permitido(chat_id):
     return chat_id == (GRUPO_TEST_ID if MODO_TEST else GRUPO_REAL_ID)
@@ -141,20 +141,54 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     datos = obtener_datos()
+
+    # Datos principales
     loteria = md_escape(datos["loteria"])
     favorito = md_escape(datos["favorito"])
     jugada = [md_escape(str(j)) for j in datos["jugada"]]
-    hora = datetime.now(ZoneInfo("America/Caracas")).strftime("%I:%M %p")
-    # Calculamos que tal todo
-    tipo = datos["loteria"]
     jugada_numeros = [str(j) for j in datos["jugada"]]
-    repetidos = validar_jugada(tipo, jugada_numeros)
-    print("DEBUG REPETIDOS:", repetidos)
-    #if repetidos:
-        #await query.answer(
-            #f"⚠️ No se puede enviar la jugada.\nEstos números ya salieron hoy: {', '.join(repetidos)}",show_alert=True)
-        #return
+    tipo = datos["loteria"]
 
+    # Validación principal
+    repetidos = validar_jugada(tipo, jugada_numeros)
+
+    # Si hay repetidos → usar jugada y lotería opcional
+    if repetidos:
+        jugada_opcional = datos.get("jugada_opcional", [])
+        loteria_opcional = datos.get("loteria_opcional", None)
+
+        if jugada_opcional and loteria_opcional:
+            repetidos_opcional = validar_jugada(loteria_opcional, jugada_opcional)
+
+            if not repetidos_opcional:
+                # Cambiar jugada y lotería
+                jugada = [md_escape(str(j)) for j in jugada_opcional]
+                loteria = md_escape(loteria_opcional)
+
+                await query.answer(
+                    f"⚠️ Atención: la jugada principal tenía números repetidos ({', '.join(repetidos)}).\n"
+                    f"Se usará la jugada y lotería opcional.",
+                    show_alert=True
+                )
+            else:
+                await query.answer(
+                    f"❌ No se puede enviar ninguna jugada.\n"
+                    f"Principal repetida: {', '.join(repetidos)}\n"
+                    f"Opcional repetida: {', '.join(repetidos_opcional)}",
+                    show_alert=True
+                )
+                return
+        else:
+            await query.answer(
+                f"⚠️ No se puede enviar la jugada.\nEstos números ya salieron hoy: {', '.join(repetidos)}",
+                show_alert=True
+            )
+            return
+
+    # Hora actual
+    hora = datetime.now(ZoneInfo("America/Caracas")).strftime("%I:%M %p")
+
+    # Margen dinámico
     margen_inicio, margen_final = calcular_margen(datos["hora_tope"], str(datos["intervalo"]))
 
     if margen_inicio == margen_final:
@@ -162,6 +196,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         sorteo_texto = f"`{margen_inicio} - {margen_final}`"
 
+    # Construcción del mensaje
     jugada_texto = " \\- ".join([f"*{j}*" for j in jugada])
 
     mensaje = (
@@ -176,6 +211,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     chat_destino = GRUPO_TEST_ID if MODO_TEST else GRUPO_REAL_ID
 
+    # Editar mensaje fijo
     if MENSAJE_FIJO_ID:
         try:
             await context.bot.edit_message_text(
@@ -189,6 +225,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             print("Error al editar:", e)
             MENSAJE_FIJO_ID = None
 
+    # Crear mensaje nuevo
     msg = await context.bot.send_message(
         chat_id=chat_destino,
         text=mensaje,
