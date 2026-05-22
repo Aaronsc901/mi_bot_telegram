@@ -18,7 +18,17 @@ URL_GRANJITA = "https://www.lottoresultados.com/resultados/animalitos/la-granjit
 URL_LOTTO = "https://www.lottoresultados.com/resultados/animalitos/lotto-activo/"
 
 # ---------------------------------------------------------
-# SCRAPER: DESCARTA LA PRIMERA JUGADA (día anterior)
+# CONVERTIR HORA A FORMATO 24H
+# ---------------------------------------------------------
+
+def convertir_hora(hora_str):
+    try:
+        return datetime.strptime(hora_str, "%I:%M %p").time()
+    except:
+        return None
+
+# ---------------------------------------------------------
+# SCRAPER: SOLO ÚLTIMOS 5 RESULTADOS DEL DÍA
 # ---------------------------------------------------------
 
 def scrape_loteria(url):
@@ -28,6 +38,7 @@ def scrape_loteria(url):
     items = soup.find_all("li", class_="step-item")
 
     resultados = []
+    horas_vistas = set()
 
     for item in items:
         hora_tag = item.find("h4")
@@ -45,16 +56,39 @@ def scrape_loteria(url):
         if numero.lower() in ["próximo", "pendiente"]:
             continue
 
+        # Convertir hora
+        hora_24 = convertir_hora(hora)
+        if not hora_24:
+            continue
+
+        # Filtrar solo horas >= 08:00 am
+        if hora_24 < datetime.strptime("08:00 AM", "%I:%M %p").time():
+            continue
+
+        # Evitar duplicados por hora (día anterior)
+        if hora in horas_vistas:
+            continue
+        horas_vistas.add(hora)
+
         resultados.append({
             "hora": hora,
+            "hora_24": hora_24.strftime("%H:%M"),
             "numero": numero
         })
 
-    # -----------------------------------------------------
-    # DESCARTAR LA PRIMERA JUGADA (contaminación del día anterior)
-    # -----------------------------------------------------
-    if len(resultados) > 1:
-        resultados = resultados[1:]
+    # Ordenar por hora
+    resultados.sort(key=lambda x: x["hora_24"])
+
+    # Tomar los últimos 5
+    resultados = resultados[-5:]
+
+    # Si no hay 5 → devolver vacío
+    if len(resultados) < 5:
+        return []
+
+    # Eliminar campo auxiliar
+    for r in resultados:
+        del r["hora_24"]
 
     return resultados
 
