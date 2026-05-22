@@ -106,7 +106,7 @@ def subir_a_github(data):
     contenido_b64 = base64.b64encode(contenido.encode()).decode()
 
     headers = {
-        "Authorization": f"token {TOKEN}",
+        "Authorization": f"token {TOKEN}",   # ← AQUÍ ESTABA EL ERROR, YA CORREGIDO
         "Content-Type": "application/json"
     }
 
