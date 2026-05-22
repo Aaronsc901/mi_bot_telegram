@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import json
 import base64
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 
 GITHUB_USER = "Aaronsc901"
@@ -17,14 +17,21 @@ URL_GUACHARO = "https://www.lottoresultados.com/resultados/animalitos/guacharo-a
 URL_GRANJITA = "https://www.lottoresultados.com/resultados/animalitos/la-granjita/" 
 URL_LOTTO = "https://www.lottoresultados.com/resultados/animalitos/lotto-activo/"
 
+def convertir_hora(hora_str):
+    try:
+        return datetime.strptime(hora_str, "%I:%M %p").time()
+    except:
+        return None
+
 def scrape_loteria(url):
     response = requests.get(url, timeout=10)
     soup = BeautifulSoup(response.text, "html.parser")
 
     resultados = []
+    vistos = set()
+    hoy = datetime.now().date()
 
     items = soup.find_all("li", class_="step-item")
-
 
     for item in items:
         hora_tag = item.find("h4")
@@ -33,13 +40,35 @@ def scrape_loteria(url):
         texto_tag = item.find("p", class_="step-text")
         texto = texto_tag.get_text(strip=True) if texto_tag else None
 
-        if texto:
-            numero = texto.split(" ", 1)[0]
+        if not hora or not texto:
+            continue
 
-            resultados.append({
-                "hora": hora,
-                "numero": numero
-            })
+        hora_24 = convertir_hora(hora)
+        if not hora_24:
+            continue
+
+        # Convertimos a datetime completo
+        fecha_hora = datetime.combine(hoy, hora_24)
+
+        # Filtrar resultados del día anterior
+        if fecha_hora.date() != hoy:
+            continue
+
+        # Evitar duplicados
+        if hora in vistos:
+            continue
+        vistos.add(hora)
+
+        numero = texto.split(" ", 1)[0]
+
+        resultados.append({
+            "hora": hora,
+            "hora_24": hora_24.strftime("%H:%M"),
+            "numero": numero
+        })
+
+    # Ordenar por hora
+    resultados.sort(key=lambda x: x["hora_24"])
 
     return resultados
 
@@ -54,24 +83,17 @@ def subir_a_github(data):
         "Content-Type": "application/json"
     }
 
-    # 1. Obtener SHA actual (si existe)
     r = requests.get(url, headers=headers)
+    sha = r.json().get("sha") if r.status_code == 200 else None
 
-    if r.status_code == 200:
-        sha = r.json().get("sha")
-    else:
-        sha = None  # Archivo no existe
-
-    # 2. Crear payload
     payload = {
         "message": "Actualización automática de resultados animalitos",
         "content": contenido_b64
     }
 
     if sha:
-        payload["sha"] = sha  # NECESARIO para evitar error 409
+        payload["sha"] = sha
 
-    # 3. Subir archivo
     r = requests.put(url, json=payload, headers=headers)
 
     if r.status_code in [200, 201]:
