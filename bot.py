@@ -60,6 +60,18 @@ def obtener_numeros_salidos_por_tipo(tipo):
     return numeros
 
 
+def validar_ambas_loterias(jugada):
+    repetidos = set()
+
+    rep_lotto = validar_jugada("lotto activo", jugada)
+    repetidos.update(rep_lotto)
+
+    rep_granjita = validar_jugada("la granjita", jugada)
+    repetidos.update(rep_granjita)
+
+    return list(repetidos)
+
+
 def md_escape(text: str) -> str:
     especiales = r"_*[]()~`>#+-=|{}.!"
     for c in especiales:
@@ -143,27 +155,37 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     datos = obtener_datos()
 
     # Datos principales
-    loteria = md_escape(datos["loteria"])
+    loteria_tecnica = datos["loteria"]
+    loteria_visible = datos.get("loteria_visible", datos["loteria"])
+
+    loteria = md_escape(loteria_visible)
     favorito = md_escape(datos["favorito"])
     jugada = [md_escape(str(j)) for j in datos["jugada"]]
-    jugada_numeros = [str(j) for j in datos["jugada"]]
-    tipo = datos["loteria"]
+    jugada_numeros = [str(j)) for j in datos["jugada"]]
 
-    # Validación principal
-    repetidos = validar_jugada(tipo, jugada_numeros)
+    # Validación principal o doble
+    if datos.get("validar_ambas", False):
+        repetidos = validar_ambas_loterias(jugada_numeros)
+    else:
+        repetidos = validar_jugada(loteria_tecnica, jugada_numeros)
 
     # Si hay repetidos → usar jugada y lotería opcional
     if repetidos:
         jugada_opcional = datos.get("jugada_opcional", [])
-        loteria_opcional = datos.get("loteria_opcional", None)
+        loteria_opcional_tecnica = datos.get("loteria_opcional", None)
+        loteria_opcional_visible = datos.get("loteria_opcional_visible", loteria_opcional_tecnica)
 
-        if jugada_opcional and loteria_opcional:
-            repetidos_opcional = validar_jugada(loteria_opcional, jugada_opcional)
+        if jugada_opcional and loteria_opcional_tecnica:
+            # Validar opcional
+            if datos.get("validar_ambas", False):
+                repetidos_opcional = validar_ambas_loterias(jugada_opcional)
+            else:
+                repetidos_opcional = validar_jugada(loteria_opcional_tecnica, jugada_opcional)
 
             if not repetidos_opcional:
                 # Cambiar jugada y lotería
                 jugada = [md_escape(str(j)) for j in jugada_opcional]
-                loteria = md_escape(loteria_opcional)
+                loteria = md_escape(loteria_opcional_visible)
 
                 await query.answer(
                     f"⚠️ Atención: la jugada principal tenía números repetidos ({', '.join(repetidos)}).\n"
