@@ -10,8 +10,8 @@
   "favorito": "CAIMAN",
   "jugada": ["30", "28", "23"],
   
-  "jugada_opcional": ["46", "64", "20"],
-  "loteria_opcional": "guacharo activo",
-  "loteria_opcional_visible": "Guácharo activo",
+  "jugada_opcional": ["00", "10", "32"],
+  "loteria_opcional": "lotto activo",
+  "loteria_opcional_visible": "Lotto activo/ La granjita",
   "margen_opcional_activado": null
 }
