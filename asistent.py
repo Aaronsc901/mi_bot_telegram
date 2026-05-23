@@ -61,12 +61,29 @@ def guardar_datos_github(datos, sha):
 
 
 # ============================
-# FLUJO DEL BOT (SOLO PRIVADO)
+# UTILIDAD: SOLO PRIVADO
 # ============================
 
 def solo_privado(update: Update):
     return update.effective_chat.type == "private"
 
+
+# ============================
+# HANDLER /start
+# ============================
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not solo_privado(update):
+        return
+
+    message = update.message or update.callback_query.message
+
+    await message.reply_text("👋 ¡Bot activo! Estoy listo para registrar resultados.")
+    
+
+# ============================
+# FLUJO DE REGISTRO /regist
+# ============================
 
 async def regist(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not solo_privado(update):
@@ -153,9 +170,17 @@ async def recibir_hora(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ConversationHandler.END
 
 
+# ============================
+# MAIN
+# ============================
+
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
+    # Handler de bienvenida
+    app.add_handler(CommandHandler("start", start))
+
+    # Handler de registro
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("regist", regist)],
         states={
