@@ -154,7 +154,8 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # FAVORITO AUTOMÁTICO CON NOMBRE
     favorito_num = jugada_numeros[0]
-    favorito_nombre = DICCIONARIO[loteria_visible].get(favorito_num, "DESCONOCIDO")
+    diccionario_base = "Lotto activo" if "lotto" in loteria_visible.lower() or "granjita" in loteria_visible.lower() else loteria_visible
+    favorito_nombre = DICCIONARIO[diccionario_base].get(favorito_num, "DESCONOCIDO")
     favorito = md_escape(f"{favorito_num} ({favorito_nombre})")
 
     # Validación principal
