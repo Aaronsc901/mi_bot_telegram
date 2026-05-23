@@ -43,3 +43,18 @@ def obtener_numeros_salidos_por_tipo(tipo):
         return set()
 
     return numeros
+
+
+def validar_jugada(tipo, jugada):
+    try:
+        numeros_salidos = obtener_numeros_salidos_por_tipo(tipo)
+    except Exception as e:
+        print("ERROR en validar_jugada:", e)
+        return []
+
+    try:
+        repetidos = [n for n in jugada if n in numeros_salidos]
+        return repetidos
+    except Exception as e:
+        print("ERROR comparando jugada:", e)
+        return []
