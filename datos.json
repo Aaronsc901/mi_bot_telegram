@@ -1,17 +1,17 @@
 {
-  "loteria": "guacharo activo",
-  "loteria_visible": "Guácharo Activo",
+  "loteria": "Ruleta royal",
+  "loteria_visible": "Ruleta Royal",
 
   "validar_ambas": false,
 
   "sorteo": "11:30-3:30PM",
-  "hora_tope": "12:00",
-  "intervalo": "60",
-  "favorito": "PUMA",
-  "jugada": ["46", "64", "47", "20"],
+  "hora_tope": "14:30",
+  "intervalo": "30",
+  "favorito": "CAIMAN",
+  "jugada": ["30", "28", "23"],
   
-  "jugada_opcional": ["21", "02", "06"],
-  "loteria_opcional": "lotto activo",
-  "loteria_opcional_visible": "Lotto Activo/ La Granjita",
+  "jugada_opcional": ["46", "64", "20"],
+  "loteria_opcional": "guacharo activo",
+  "loteria_opcional_visible": "Guácharo activo",
   "margen_opcional_activado": null
 }
