@@ -220,11 +220,21 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 activado_dt = datetime.fromisoformat(datos["margen_opcional_activado"])
 
                 # 🔥 INTERVALO AUTOMÁTICO
-                intervalo_secundario = "30" if "ruleta" in loteria_opcional_tecnica.lower() else "60"
-                datos["intervalo"] = intervalo_secundario
+                ahora = datetime.now(ZoneInfo("America/Caracas"))
+                intervalo_secundario = 30 if "ruleta" in loteria_opcional_tecnica.lower() else 60
+                if intervalo_secundario == 60:
+                    margen_inicio_dt = ahora.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+                else:
+                    minuto = ahora.minute
+                    if minuto <= 30:
+                        margen_inicio_dt = ahora.replace(minute=30, second=0, microsecond=0)
+                    else:
+                        siguiente_hora = ahora.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+                        margen_inicio_dt = siguiente_hora.replace(minute=30)
+                        margen_final_dt = margen_inicio_dt + timedelta(hours=5)
+                        margen_inicio = margen_inicio_dt.strftime("%I:%M %p")
+                        margen_final = margen_final_dt.strftime("%I:%M %p")
 
-                margen_inicio = activado_dt.strftime("%I:%M %p")
-                margen_final = (activado_dt + timedelta(hours=5)).strftime("%I:%M %p")
 
                 jugada = [md_escape(str(j)) for j in jugada_opcional]
                 loteria_visible = loteria_opcional_visible
