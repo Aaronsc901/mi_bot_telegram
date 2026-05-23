@@ -29,10 +29,10 @@ LOTERIAS = LOTERIAS_NORMALES + [LOTERIA_ROYAL]
 # ============================
 
 def generar_horarios_normales():
-    return [f"{h:02d}:00" for h in range(8, 20)]  # 08:00 → 19:00 (12 horarios)
+    return [f"{h:02d}:00" for h in range(8, 20)]  # 08:00 → 19:00
 
 def generar_horarios_royal():
-    return [f"{h:02d}:30" for h in range(8, 21)]  # 08:30 → 20:30 (13 horarios)
+    return [f"{h:02d}:30" for h in range(8, 21)]  # 08:30 → 20:30
 
 # ============================
 # GITHUB
@@ -123,10 +123,7 @@ async def recibir_lista(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     loteria = context.user_data["loteria"]
-    lista = update.message.text.split()
-
-    # Convertir a strings limpias
-    lista = [n.strip() for n in lista]
+    lista = [n.strip() for n in update.message.text.split()]
 
     # Generar horarios
     if loteria == LOTERIA_ROYAL:
@@ -150,13 +147,85 @@ async def recibir_lista(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if exito:
         await update.message.reply_text(
-            f"✅ Registro completado para {loteria}.\n"
-            f"Se guardaron {len(lista)} números y se rellenaron {len(horarios) - len(lista)} con null."
+            f"🎉 *Registro completado para* *{loteria}*.\n"
+            f"📌 *Guardados:* {len(lista)} números\n"
+            f"📌 *Rellenados con null:* {len(horarios) - len(lista)}\n\n"
+            f"¿Qué deseas hacer ahora?",
+            parse_mode="Markdown"
+        )
+
+        # MENÚ PREMIUM
+        keyboard = [
+            [InlineKeyboardButton("➕ Registrar otra lotería", callback_data="otra_loteria")],
+            [InlineKeyboardButton(f"🔁 Registrar nuevamente {loteria}", callback_data=f"repetir_{loteria}")],
+            [InlineKeyboardButton("📄 Ver horarios", callback_data=f"ver_horarios_{loteria}")],
+            [InlineKeyboardButton("❌ Finalizar", callback_data="finalizar")]
+        ]
+
+        reply_markup = InlineKeyboardMarkup(keyboard)
+
+        await update.message.reply_text(
+            "👇 *Selecciona una opción:*",
+            reply_markup=reply_markup,
+            parse_mode="Markdown"
         )
     else:
         await update.message.reply_text("❌ Error al guardar en GitHub.")
 
     return ConversationHandler.END
+
+# ============================
+# MENÚ POST REGISTRO
+# ============================
+
+async def menu_post_registro(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    data = query.data
+
+    # Registrar otra lotería
+    if data == "otra_loteria":
+        keyboard = [[InlineKeyboardButton(l, callback_data=l)] for l in LOTERIAS]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+
+        await query.message.reply_text(
+            "📌 *Selecciona la lotería que deseas registrar:*",
+            reply_markup=reply_markup,
+            parse_mode="Markdown"
+        )
+        return LOTERIA
+
+    # Repetir la misma lotería
+    if data.startswith("repetir_"):
+        loteria = data.replace("repetir_", "")
+        context.user_data["loteria"] = loteria
+
+        await query.message.reply_text(
+            f"🔁 *Registrar nuevamente {loteria}*\n\n"
+            "Envíame la lista completa de números separados por espacio.",
+            parse_mode="Markdown"
+        )
+        return LISTA
+
+    # Ver horarios
+    if data.startswith("ver_horarios_"):
+        loteria = data.replace("ver_horarios_", "")
+
+        if loteria == LOTERIA_ROYAL:
+            horarios = generar_horarios_royal()
+        else:
+            horarios = generar_horarios_normales()
+
+        texto = "🕒 *Horarios de esta lotería:*\n\n"
+        texto += "\n".join([f"• {h}" for h in horarios])
+
+        await query.message.reply_text(texto, parse_mode="Markdown")
+        return ConversationHandler.END
+
+    # Finalizar
+    if data == "finalizar":
+        await query.message.reply_text("👌 Proceso finalizado.")
+        return ConversationHandler.END
 
 # ============================
 # MAIN
@@ -177,6 +246,11 @@ def main():
     )
 
     app.add_handler(conv_handler)
+
+    # Handler del menú premium
+    app.add_handler(CallbackQueryHandler(menu_post_registro,
+                                         pattern="^(otra_loteria|repetir_.*|ver_horarios_.*|finalizar)$"))
+
     app.run_polling()
 
 if __name__ == "__main__":
