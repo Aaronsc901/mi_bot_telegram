@@ -9,16 +9,21 @@ from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandle
 from validacion import validar_jugada
 
 # ---------------------------------------------------------
+# CARGAR DICCIONARIO DE ANIMALITOS
+# ---------------------------------------------------------
+
+with open("diccionario_animalitos.json", "r", encoding="utf-8") as f:
+    DICCIONARIO = json.load(f)
+
+# ---------------------------------------------------------
 # CONFIGURACIÓN GENERAL
 # ---------------------------------------------------------
 
 TOKEN = os.getenv("TOKEN")
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
-# URL API del archivo JSON
 GITHUB_API_URL = "https://api.github.com/repos/Aaronsc901/mi_bot_telegram/contents/datos.json?ref=master"
 
-# Modo test / real
 MODO_TEST = True
 GRUPO_REAL_ID = -1002793980909
 GRUPO_TEST_ID = -5197810505
@@ -26,7 +31,6 @@ GRUPO_TEST_ID = -5197810505
 def grupo_permitido(chat_id):
     return chat_id == (GRUPO_TEST_ID if MODO_TEST else GRUPO_REAL_ID)
 
-# Variables en memoria
 MENSAJE_FIJO_ID = None
 CACHE = {"data": None, "timestamp": 0}
 
@@ -43,7 +47,7 @@ def md_escape(text: str) -> str:
 
 
 # ---------------------------------------------------------
-# LECTURA DEL JSON REMOTO (GitHub)
+# LECTURA DEL JSON REMOTO
 # ---------------------------------------------------------
 
 def obtener_datos():
@@ -53,16 +57,16 @@ def obtener_datos():
     contenido = base64.b64decode(r["content"]).decode()
     datos = json.loads(contenido)
 
-    datos["_sha"] = r["sha"]  # Guardamos el SHA para poder escribir luego
+    datos["_sha"] = r["sha"]
     return datos
 
 
 # ---------------------------------------------------------
-# ESCRITURA DEL JSON REMOTO (GitHub)
+# ESCRITURA DEL JSON REMOTO
 # ---------------------------------------------------------
 
 def guardar_datos(datos):
-    sha = datos.pop("_sha")  # SHA actual del archivo
+    sha = datos.pop("_sha")
 
     nuevo_contenido = base64.b64encode(
         json.dumps(datos, indent=2).encode()
@@ -83,7 +87,7 @@ def guardar_datos(datos):
 
 
 # ---------------------------------------------------------
-# CÁLCULO DE MARGEN PRINCIPAL
+# CÁLCULO DE MARGEN
 # ---------------------------------------------------------
 
 def calcular_margen(hora_tope_str, intervalo):
@@ -127,7 +131,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # ---------------------------------------------------------
-# CALLBACK DEL BOTÓN
+# CALLBACK PRINCIPAL
 # ---------------------------------------------------------
 
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -145,10 +149,13 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     loteria_tecnica = datos["loteria"]
     loteria_visible = datos.get("loteria_visible", datos["loteria"])
 
-    loteria = md_escape(loteria_visible)
-    favorito = md_escape(datos["favorito"])
     jugada = [md_escape(str(j)) for j in datos["jugada"]]
     jugada_numeros = [str(j) for j in datos["jugada"]]
+
+    # FAVORITO AUTOMÁTICO CON NOMBRE
+    favorito_num = jugada_numeros[0]
+    favorito_nombre = DICCIONARIO[loteria_visible].get(favorito_num, "DESCONOCIDO")
+    favorito = md_escape(f"{favorito_num} ({favorito_nombre})")
 
     # Validación principal
     if datos.get("validar_ambas", False):
@@ -170,15 +177,12 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     usar_opcional = False
 
-    # Activación por repetidos
     if repetidos:
         usar_opcional = True
 
-    # Activación por tiempo
     if activar_por_tiempo:
         usar_opcional = True
 
-    # Activación por persistencia
     margen_guardado = datos.get("margen_opcional_activado", None)
     if margen_guardado:
         activado_dt = datetime.fromisoformat(margen_guardado)
@@ -188,7 +192,10 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             datos["margen_opcional_activado"] = None
             guardar_datos(datos)
 
-    # Si debemos usar la jugada opcional
+    # ---------------------------------------------------------
+    # JUGADA SECUNDARIA (CON INTERVALO AUTOMÁTICO)
+    # ---------------------------------------------------------
+
     if usar_opcional:
         jugada_opcional = datos.get("jugada_opcional", [])
         loteria_opcional_tecnica = datos.get("loteria_opcional", None)
@@ -205,17 +212,26 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             if not repetidos_opcional:
 
-                # Activar persistencia si no estaba activa
                 if not datos.get("margen_opcional_activado"):
                     datos["margen_opcional_activado"] = ahora.isoformat()
                     guardar_datos(datos)
 
                 activado_dt = datetime.fromisoformat(datos["margen_opcional_activado"])
+
+                # 🔥 INTERVALO AUTOMÁTICO
+                intervalo_secundario = "30" if "ruleta" in loteria_opcional_tecnica.lower() else "60"
+                datos["intervalo"] = intervalo_secundario
+
                 margen_inicio = activado_dt.strftime("%I:%M %p")
                 margen_final = (activado_dt + timedelta(hours=5)).strftime("%I:%M %p")
 
                 jugada = [md_escape(str(j)) for j in jugada_opcional]
-                loteria = md_escape(loteria_opcional_visible)
+                loteria_visible = loteria_opcional_visible
+
+                # FAVORITO SECUNDARIO AUTOMÁTICO
+                favorito_num = str(jugada_opcional[0])
+                favorito_nombre = DICCIONARIO[loteria_visible].get(favorito_num, "DESCONOCIDO")
+                favorito = md_escape(f"{favorito_num} ({favorito_nombre})")
 
             else:
                 await query.answer(
@@ -226,13 +242,16 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
                 return
 
-    # Construcción del mensaje
+    # ---------------------------------------------------------
+    # MENSAJE FINAL
+    # ---------------------------------------------------------
+
     jugada_texto = " \\- ".join([f"*{j}*" for j in jugada])
 
     mensaje = (
         "🔥 *ACTUALIZACIÓN DE JUGADA* 🔥\n"
         f"📅 *Última actualización:* `{ahora.strftime('%I:%M %p')}`\n\n"
-        f"🎯 *Lotería:* *{loteria}*\n"
+        f"🎯 *Lotería:* *{md_escape(loteria_visible)}*\n"
         f"🕒 *Sorteo:* `{margen_inicio} - {margen_final}`\n"
         f"🐾 *Favorito:* *{favorito}*\n\n"
         "🔢 *Jugada del momento:*\n"
@@ -241,7 +260,6 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     chat_destino = GRUPO_TEST_ID if MODO_TEST else GRUPO_REAL_ID
 
-    # Editar mensaje fijo
     if MENSAJE_FIJO_ID:
         try:
             await context.bot.edit_message_text(
@@ -254,7 +272,6 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except:
             MENSAJE_FIJO_ID = None
 
-    # Crear mensaje nuevo
     msg = await context.bot.send_message(
         chat_id=chat_destino,
         text=mensaje,
