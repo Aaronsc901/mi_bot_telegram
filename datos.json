@@ -1,16 +1,16 @@
 {
   "loteria": "guacharo activo",
-  "loteria_visible": "Guácharo Activo",
+  "loteria_visible": "GUACHARO",
 
   "validar_ambas": false,
 
   "sorteo": "11:30-3:30PM",
-  "hora_tope": "19:00",
+  "hora_tope": "12:00",
   "intervalo": "60",
-  "favorito": "DELFIN",
-  "jugada": ["0", "03", "09"],
+  "favorito": "PUMA",
+  "jugada": ["46", "47", "20"],
   
-  "jugada_opcional": ["21", "24", "15"],
+  "jugada_opcional": ["21", "02", "06"],
   "loteria_opcional": "lotto activo",
   "loteria_opcional_visible": "Lotto Activo y La Granjita",
   "margen_opcional_activado": null
