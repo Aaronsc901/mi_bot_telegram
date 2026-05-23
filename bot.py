@@ -12,8 +12,11 @@ from validacion import validar_jugada
 # CARGAR DICCIONARIO DE ANIMALITOS
 # ---------------------------------------------------------
 
-with open("diccionario_animalitos.json", "r", encoding="utf-8") as f:
-    DICCIONARIO = json.load(f)
+def cargar_diccionario():
+    url = "https://raw.githubusercontent.com/Aaronsc901/animalitos_data/master/diccionario_animalitos.json"
+    return requests.get(url).json()
+
+DICCIONARIO = cargar_diccionario()
 
 # ---------------------------------------------------------
 # CONFIGURACIÓN GENERAL
@@ -32,7 +35,6 @@ def grupo_permitido(chat_id):
     return chat_id == (GRUPO_TEST_ID if MODO_TEST else GRUPO_REAL_ID)
 
 MENSAJE_FIJO_ID = None
-CACHE = {"data": None, "timestamp": 0}
 
 
 # ---------------------------------------------------------
@@ -87,7 +89,7 @@ def guardar_datos(datos):
 
 
 # ---------------------------------------------------------
-# CÁLCULO DE MARGEN
+# CÁLCULO DE MARGEN PRINCIPAL
 # ---------------------------------------------------------
 
 def calcular_margen(hora_tope_str, intervalo):
@@ -152,18 +154,25 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     jugada = [md_escape(str(j)) for j in datos["jugada"]]
     jugada_numeros = [str(j) for j in datos["jugada"]]
 
-    # FAVORITO AUTOMÁTICO CON NOMBRE
+    # FAVORITO AUTOMÁTICO
     favorito_num = jugada_numeros[0]
-    diccionario_base = "Lotto activo" if "lotto" in loteria_visible.lower() or "granjita" in loteria_visible.lower() else loteria_visible
-    favorito_nombre = DICCIONARIO[diccionario_base].get(favorito_num, "DESCONOCIDO")
+
+    # Selección inteligente del diccionario base
+    lv = loteria_visible.lower()
+    if "lotto" in lv and "granjita" in lv:
+        diccionario_base = "Lotto activo"
+    elif "lotto" in lv:
+        diccionario_base = "Lotto activo"
+    elif "granjita" in lv:
+        diccionario_base = "La Granjita"
+    else:
+        diccionario_base = loteria_visible
+
+    favorito_nombre = DICCIONARIO.get(diccionario_base, {}).get(favorito_num, "DESCONOCIDO")
     favorito = md_escape(f"{favorito_num} ({favorito_nombre})")
 
     # Validación principal
-    if datos.get("validar_ambas", False):
-        from validacion import validar_ambas_loterias
-        repetidos = validar_ambas_loterias(jugada_numeros)
-    else:
-        repetidos = validar_jugada(loteria_tecnica, jugada_numeros)
+    repetidos = validar_jugada(loteria_tecnica, jugada_numeros)
 
     # Margen principal
     margen_inicio, margen_final = calcular_margen(datos["hora_tope"], str(datos["intervalo"]))
@@ -176,25 +185,10 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     falta = margen_final_dt - ahora
     activar_por_tiempo = falta.total_seconds() <= 3600
 
-    usar_opcional = False
-
-    if repetidos:
-        usar_opcional = True
-
-    if activar_por_tiempo:
-        usar_opcional = True
-
-    margen_guardado = datos.get("margen_opcional_activado", None)
-    if margen_guardado:
-        activado_dt = datetime.fromisoformat(margen_guardado)
-        if ahora <= activado_dt + timedelta(hours=5):
-            usar_opcional = True
-        else:
-            datos["margen_opcional_activado"] = None
-            guardar_datos(datos)
+    usar_opcional = repetidos or activar_por_tiempo
 
     # ---------------------------------------------------------
-    # JUGADA SECUNDARIA (CON INTERVALO AUTOMÁTICO)
+    # JUGADA SECUNDARIA (CON MARGEN CORREGIDO)
     # ---------------------------------------------------------
 
     if usar_opcional:
@@ -204,54 +198,36 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if jugada_opcional and loteria_opcional_tecnica:
 
-            # Validación opcional
-            if datos.get("validar_ambas", False):
-                from validacion import validar_ambas_loterias
-                repetidos_opcional = validar_ambas_loterias(jugada_opcional)
-            else:
-                repetidos_opcional = validar_jugada(loteria_opcional_tecnica, jugada_opcional)
+            repetidos_opcional = validar_jugada(loteria_opcional_tecnica, jugada_opcional)
 
             if not repetidos_opcional:
 
-                if not datos.get("margen_opcional_activado"):
-                    datos["margen_opcional_activado"] = ahora.isoformat()
-                    guardar_datos(datos)
-
-                activado_dt = datetime.fromisoformat(datos["margen_opcional_activado"])
-
-                # 🔥 INTERVALO AUTOMÁTICO
-                ahora = datetime.now(ZoneInfo("America/Caracas"))
+                # INTERVALO SECUNDARIO
                 intervalo_secundario = 30 if "ruleta" in loteria_opcional_tecnica.lower() else 60
+
+                # Cálculo correcto del margen secundario
                 if intervalo_secundario == 60:
                     margen_inicio_dt = ahora.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
                 else:
                     minuto = ahora.minute
-                    if minuto <= 30:
+                    if minuto < 30:
                         margen_inicio_dt = ahora.replace(minute=30, second=0, microsecond=0)
                     else:
                         siguiente_hora = ahora.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
                         margen_inicio_dt = siguiente_hora.replace(minute=30)
-                        margen_final_dt = margen_inicio_dt + timedelta(hours=5)
-                        margen_inicio = margen_inicio_dt.strftime("%I:%M %p")
-                        margen_final = margen_final_dt.strftime("%I:%M %p")
 
+                margen_final_dt = margen_inicio_dt + timedelta(hours=5)
 
+                margen_inicio = margen_inicio_dt.strftime("%I:%M %p")
+                margen_final = margen_final_dt.strftime("%I:%M %p")
+
+                # Cambiar jugada y lotería visibles
                 jugada = [md_escape(str(j)) for j in jugada_opcional]
                 loteria_visible = loteria_opcional_visible
 
-                # FAVORITO SECUNDARIO AUTOMÁTICO
+                # FAVORITO SECUNDARIO
                 favorito_num = str(jugada_opcional[0])
-                lv = loteria_visible.lower()
-                if "lotto" in lv and "granjita" in lv:
-                    diccionario_base = "Lotto activo"
-                elif "lotto" in lv:
-                    diccionario_base = "Lotto activo"
-                elif "granjita" in lv:
-                    diccionario_base = "La Granjita"
-                else:
-                    diccionario_base = loteria_visible
-                    
-                favorito_nombre = DICCIONARIO.get(diccionario_base, {}).get(favorito_num, "DESCONOCIDO")
+                favorito_nombre = DICCIONARIO.get("Lotto activo", {}).get(favorito_num, "DESCONOCIDO")
                 favorito = md_escape(f"{favorito_num} ({favorito_nombre})")
 
             else:
@@ -294,8 +270,8 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             MENSAJE_FIJO_ID = None
 
     msg = await context.bot.send_message(
-        chat_id=chat_destino,
-        text=mensaje,
+        chat_destino,
+        mensaje,
         parse_mode="MarkdownV2"
     )
 
