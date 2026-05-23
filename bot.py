@@ -231,7 +231,17 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
                 # FAVORITO SECUNDARIO AUTOMÁTICO
                 favorito_num = str(jugada_opcional[0])
-                favorito_nombre = DICCIONARIO[loteria_visible].get(favorito_num, "DESCONOCIDO")
+                lv = loteria_visible.lower()
+                if "lotto" in lv and "granjita" in lv:
+                    diccionario_base = "Lotto activo"
+                elif "lotto" in lv:
+                    diccionario_base = "Lotto activo"
+                elif "granjita" in lv:
+                    diccionario_base = "La Granjita"
+                else:
+                    diccionario_base = loteria_visible
+                    
+                favorito_nombre = DICCIONARIO.get(diccionario_base, {}).get(favorito_num, "DESCONOCIDO")
                 favorito = md_escape(f"{favorito_num} ({favorito_nombre})")
 
             else:
