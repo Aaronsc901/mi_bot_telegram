@@ -3,7 +3,10 @@ import os
 import base64
 import requests
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes, ConversationHandler, MessageHandler, filters
+from telegram.ext import (
+    ApplicationBuilder, CommandHandler, CallbackQueryHandler,
+    ContextTypes, ConversationHandler, MessageHandler, filters
+)
 
 TOKEN = os.getenv("TOKEN")  # Token del bot de Telegram
 
@@ -33,8 +36,10 @@ def cargar_datos_github():
         contenido = base64.b64decode(r.json()["content"]).decode()
         sha = r.json()["sha"]
         return json.loads(contenido), sha
-    else:
-        return {}, None
+
+    # Archivo no existe → crear uno vacío
+    return {}, None
+
 
 def guardar_datos_github(datos, sha):
     url = f"https://api.github.com/repos/{GITHUB_USER}/{REPO}/contents/{FILE_PATH}"
@@ -44,27 +49,49 @@ def guardar_datos_github(datos, sha):
 
     payload = {
         "message": "Actualización de resultados desde el bot",
-        "content": nuevo_contenido,
-        "sha": sha
+        "content": nuevo_contenido
     }
 
+    if sha:
+        payload["sha"] = sha  # Necesario si el archivo ya existe
+
     r = requests.put(url, headers=headers, json=payload)
-    return r.status_code == 200 or r.status_code == 201
+
+    return r.status_code in [200, 201]
+
 
 # ============================
-# FLUJO DEL BOT
+# FLUJO DEL BOT (SOLO PRIVADO)
 # ============================
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def solo_privado(update: Update):
+    return update.effective_chat.type == "private"
+
+
+async def regist(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not solo_privado(update):
+        return
+
+    message = update.message or update.callback_query.message
+
     keyboard = [
         [InlineKeyboardButton("Registrar resultados", callback_data="registrar")],
         [InlineKeyboardButton("Cancelar", callback_data="cancelar")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text("¿Deseas registrar los resultados actuales?", reply_markup=reply_markup)
+
+    await message.reply_text(
+        "¿Deseas registrar los resultados actuales?",
+        reply_markup=reply_markup
+    )
+
     return CHOOSING
 
+
 async def elegir_accion(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not solo_privado(update):
+        return
+
     query = update.callback_query
     await query.answer()
 
@@ -73,23 +100,36 @@ async def elegir_accion(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.message.reply_text("Selecciona la lotería:", reply_markup=reply_markup)
         return LOTERIA
-    else:
-        await query.message.reply_text("Operación cancelada.")
-        return ConversationHandler.END
+
+    await query.message.reply_text("Operación cancelada.")
+    return ConversationHandler.END
+
 
 async def elegir_loteria(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not solo_privado(update):
+        return
+
     query = update.callback_query
     await query.answer()
+
     context.user_data["loteria"] = query.data
     await query.message.reply_text(f"Ingresar número para {query.data}:")
     return NUMERO
 
+
 async def recibir_numero(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not solo_privado(update):
+        return
+
     context.user_data["numero"] = update.message.text
     await update.message.reply_text("Ingresa la hora de salida (HH:MM):")
     return HORA
 
+
 async def recibir_hora(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not solo_privado(update):
+        return
+
     loteria = context.user_data["loteria"]
     numero = context.user_data["numero"]
     hora = update.message.text
@@ -104,29 +144,32 @@ async def recibir_hora(update: Update, context: ContextTypes.DEFAULT_TYPE):
     exito = guardar_datos_github(datos, sha)
 
     if exito:
-        await update.message.reply_text(f"✅ Resultado registrado:\n{loteria} → Número {numero} a las {hora}")
+        await update.message.reply_text(
+            f"✅ Resultado registrado:\n{loteria} → Número {numero} a las {hora}"
+        )
     else:
         await update.message.reply_text("❌ Error al guardar en GitHub.")
 
     return ConversationHandler.END
 
+
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
     conv_handler = ConversationHandler(
-        entry_points=[CommandHandler("start", start)],
+        entry_points=[CommandHandler("regist", regist)],
         states={
             CHOOSING: [CallbackQueryHandler(elegir_accion)],
             LOTERIA: [CallbackQueryHandler(elegir_loteria)],
             NUMERO: [MessageHandler(filters.TEXT & ~filters.COMMAND, recibir_numero)],
             HORA: [MessageHandler(filters.TEXT & ~filters.COMMAND, recibir_hora)],
         },
-        fallbacks=[CommandHandler("start", start)],
+        fallbacks=[CommandHandler("regist", regist)],
     )
 
     app.add_handler(conv_handler)
     app.run_polling()
 
+
 if __name__ == "__main__":
     main()
-
