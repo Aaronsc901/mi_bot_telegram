@@ -13,7 +13,7 @@ from validacion import validar_jugada
 # ---------------------------------------------------------
 
 def cargar_diccionario():
-    url = "https://raw.githubusercontent.com/Aaronsc901/animalitos_data/master/diccionario_animalitos.json"
+    url = "https://raw.githubusercontent.com/Aaronsc901/mi_bot_telegram/master/diccionario_animalitos.json"
     return requests.get(url).json()
 
 DICCIONARIO = cargar_diccionario()
