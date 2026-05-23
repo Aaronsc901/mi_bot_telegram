@@ -194,7 +194,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     usar_opcional = repetidos or activar_por_tiempo
 
     # ---------------------------------------------------------
-    # JUGADA SECUNDARIA (CON MARGEN CORREGIDO)
+    # JUGADA SECUNDARIA (CON MARGEN CORREGIDO + NUEVA LÓGICA)
     # ---------------------------------------------------------
 
     if usar_opcional:
@@ -206,68 +206,62 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             repetidos_opcional = validar_jugada(loteria_opcional_tecnica, jugada_opcional)
 
-            if not repetidos_opcional:
-
-                # INTERVALO SECUNDARIO
-                intervalo_secundario = 30 if "ruleta" in loteria_opcional_tecnica.lower() else 60
-
-                # Cálculo correcto del margen secundario
-                if intervalo_secundario == 60:
-                    margen_inicio_dt = ahora.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
-                else:
-                    minuto = ahora.minute
-                    if minuto < 30:
-                        margen_inicio_dt = ahora.replace(minute=30, second=0, microsecond=0)
-                    else:
-                        siguiente_hora = ahora.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
-                        margen_inicio_dt = siguiente_hora.replace(minute=30)
-
-                # Margen final = 4 horas después
-                margen_final_dt = margen_inicio_dt + timedelta(hours=4)
-
-                # ---------------------------------------------------------
-                # APLICAR LÍMITE MÁXIMO SEGÚN LOTERÍA
-                # ---------------------------------------------------------
-
-                if intervalo_secundario == 60:
-                    limite = margen_inicio_dt.replace(hour=19, minute=0, second=0, microsecond=0)
-                else:
-                    limite = margen_inicio_dt.replace(hour=20, minute=30, second=0, microsecond=0)
-
-                if margen_final_dt > limite:
-                    margen_final_dt = limite
-
-                margen_inicio = margen_inicio_dt.strftime("%I:%M %p")
-                margen_final = margen_final_dt.strftime("%I:%M %p")
-
-                # Cambiar jugada y lotería visibles
-                jugada = [md_escape(str(j)) for j in jugada_opcional]
-                loteria_visible = loteria_opcional_visible
-
-                # FAVORITO SECUNDARIO
-                favorito_num = str(jugada_opcional[0])
-
-                lv2 = loteria_visible.lower()
-                if "lotto" in lv2 and "granjita" in lv2:
-                    diccionario_base2 = "Lotto activo"
-                elif "lotto" in lv2:
-                    diccionario_base2 = "Lotto activo"
-                elif "granjita" in lv2:
-                    diccionario_base2 = "La Granjita"
-                else:
-                    diccionario_base2 = loteria_visible
-
-                favorito_nombre = DICCIONARIO.get(diccionario_base2, {}).get(favorito_num, "DESCONOCIDO")
-                favorito = md_escape(f"{favorito_num} ({favorito_nombre})")
-
-            else:
+            # NUEVA LÓGICA: si la jugada secundaria tiene repetidos → no hay jugada disponible
+            if repetidos_opcional:
                 await query.answer(
-                    f"❌ No se puede enviar ninguna jugada.\n"
-                    f"Principal repetida: {', '.join(repetidos)}\n"
-                    f"Opcional repetida: {', '.join(repetidos_opcional)}",
+                    "❌ No hay nueva jugada disponible por el momento que podamos ofrecerte.",
                     show_alert=True
                 )
                 return
+
+            # INTERVALO SECUNDARIO
+            intervalo_secundario = 30 if "ruleta" in loteria_opcional_tecnica.lower() else 60
+
+            # Cálculo correcto del margen secundario
+            if intervalo_secundario == 60:
+                margen_inicio_dt = ahora.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+            else:
+                minuto = ahora.minute
+                if minuto < 30:
+                    margen_inicio_dt = ahora.replace(minute=30, second=0, microsecond=0)
+                else:
+                    siguiente_hora = ahora.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+                    margen_inicio_dt = siguiente_hora.replace(minute=30)
+
+            # Margen final = 4 horas después
+            margen_final_dt = margen_inicio_dt + timedelta(hours=4)
+
+            # Límite máximo
+            if intervalo_secundario == 60:
+                limite = margen_inicio_dt.replace(hour=19, minute=0, second=0, microsecond=0)
+            else:
+                limite = margen_inicio_dt.replace(hour=20, minute=30, second=0, microsecond=0)
+
+            if margen_final_dt > limite:
+                margen_final_dt = limite
+
+            margen_inicio = margen_inicio_dt.strftime("%I:%M %p")
+            margen_final = margen_final_dt.strftime("%I:%M %p")
+
+            # Cambiar jugada y lotería visibles
+            jugada = [md_escape(str(j)) for j in jugada_opcional]
+            loteria_visible = loteria_opcional_visible
+
+            # FAVORITO SECUNDARIO
+            favorito_num = str(jugada_opcional[0])
+
+            lv2 = loteria_visible.lower()
+            if "lotto" in lv2 and "granjita" in lv2:
+                diccionario_base2 = "Lotto activo"
+            elif "lotto" in lv2:
+                diccionario_base2 = "Lotto activo"
+            elif "granjita" in lv2:
+                diccionario_base2 = "La Granjita"
+            else:
+                diccionario_base2 = loteria_visible
+
+            favorito_nombre = DICCIONARIO.get(diccionario_base2, {}).get(favorito_num, "DESCONOCIDO")
+            favorito = md_escape(f"{favorito_num} ({favorito_nombre})")
 
     # ---------------------------------------------------------
     # MENSAJE FINAL
