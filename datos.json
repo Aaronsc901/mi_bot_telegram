@@ -1,6 +1,6 @@
 {
   "loteria": "guacharo activo",
-  "loteria_visible": "GUACHARO",
+  "loteria_visible": "Guacharo activo",
 
   "validar_ambas": false,
 
@@ -12,6 +12,6 @@
   
   "jugada_opcional": ["21", "02", "06"],
   "loteria_opcional": "lotto activo",
-  "loteria_opcional_visible": "Lotto Activo y La Granjita",
+  "loteria_opcional_visible": "Lotto Activo/ La Granjita",
   "margen_opcional_activado": null
 }
