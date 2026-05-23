@@ -14,7 +14,13 @@ from validacion import validar_jugada
 
 def cargar_diccionario():
     url = "https://raw.githubusercontent.com/Aaronsc901/mi_bot_telegram/master/diccionario_animalitos.json"
-    return requests.get(url).json()
+    try:
+        r = requests.get(url, timeout=5)
+        r.raise_for_status()
+        return json.loads(r.text)
+    except Exception as e:
+        print("ERROR cargando diccionario:", e)
+        return {}
 
 DICCIONARIO = cargar_diccionario()
 
@@ -42,7 +48,7 @@ MENSAJE_FIJO_ID = None
 # ---------------------------------------------------------
 
 def md_escape(text: str) -> str:
-    especiales = r"_*[]()~`>#+-=|{}.!"
+    especiales = r"_*[]()~`>#+-=|{}.!"""
     for c in especiales:
         text = text.replace(c, f"\\{c}")
     return text
@@ -216,7 +222,20 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         siguiente_hora = ahora.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
                         margen_inicio_dt = siguiente_hora.replace(minute=30)
 
-                margen_final_dt = margen_inicio_dt + timedelta(hours=5)
+                # Margen final = 4 horas después
+                margen_final_dt = margen_inicio_dt + timedelta(hours=4)
+
+                # ---------------------------------------------------------
+                # APLICAR LÍMITE MÁXIMO SEGÚN LOTERÍA
+                # ---------------------------------------------------------
+
+                if intervalo_secundario == 60:
+                    limite = margen_inicio_dt.replace(hour=19, minute=0, second=0, microsecond=0)
+                else:
+                    limite = margen_inicio_dt.replace(hour=20, minute=30, second=0, microsecond=0)
+
+                if margen_final_dt > limite:
+                    margen_final_dt = limite
 
                 margen_inicio = margen_inicio_dt.strftime("%I:%M %p")
                 margen_final = margen_final_dt.strftime("%I:%M %p")
@@ -227,7 +246,18 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
                 # FAVORITO SECUNDARIO
                 favorito_num = str(jugada_opcional[0])
-                favorito_nombre = DICCIONARIO.get("Lotto activo", {}).get(favorito_num, "DESCONOCIDO")
+
+                lv2 = loteria_visible.lower()
+                if "lotto" in lv2 and "granjita" in lv2:
+                    diccionario_base2 = "Lotto activo"
+                elif "lotto" in lv2:
+                    diccionario_base2 = "Lotto activo"
+                elif "granjita" in lv2:
+                    diccionario_base2 = "La Granjita"
+                else:
+                    diccionario_base2 = loteria_visible
+
+                favorito_nombre = DICCIONARIO.get(diccionario_base2, {}).get(favorito_num, "DESCONOCIDO")
                 favorito = md_escape(f"{favorito_num} ({favorito_nombre})")
 
             else:
