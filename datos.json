@@ -1,17 +1,22 @@
 {
   "loteria": "Ruleta royal",
   "loteria_visible": "Ruleta Royal",
-
   "validar_ambas": false,
-
   "sorteo": "11:30-3:30PM",
   "hora_tope": "14:30",
   "intervalo": "30",
   "favorito": "CAIMAN",
-  "jugada": ["30", "28", "23"],
-  
-  "jugada_opcional": ["00", "36", "32"],
+  "jugada": [
+    "30",
+    "28",
+    "23"
+  ],
+  "jugada_opcional": [
+    "00",
+    "36",
+    "32"
+  ],
   "loteria_opcional": "lotto activo",
   "loteria_opcional_visible": "Lotto activo/ La granjita",
-  "margen_opcional_activado": null
+  "margen_opcional_activado": "2026-05-23T13:37:35.026515-04:00"
 }
