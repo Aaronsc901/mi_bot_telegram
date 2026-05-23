@@ -20,19 +20,19 @@ def obtener_numeros_salidos_por_tipo(tipo):
                 if numero and str(numero).isdigit():
                     numeros.add(numero)
 
-        # LOTTO ACTIVO
-        elif "lotto" in tipo:
+        # LOTTO ACTIVO + LA GRANJITA (VALIDAR AMBAS)
+        elif "lotto" in tipo or "granjita" in tipo:
+            # Lotto Activo
             for hora, numero in data.get("Lotto activo", {}).items():
                 if numero and str(numero).isdigit():
                     numeros.add(numero)
 
-        # LA GRANJITA
-        elif "granjita" in tipo:
+            # La Granjita
             for hora, numero in data.get("La Granjita", {}).items():
                 if numero and str(numero).isdigit():
                     numeros.add(numero)
 
-        # RULETA ROYAL → AHORA SÍ SE VALIDA
+        # RULETA ROYAL
         elif "ruleta" in tipo:
             for hora, numero in data.get("Ruleta Royal", {}).items():
                 if numero and str(numero).isdigit():
