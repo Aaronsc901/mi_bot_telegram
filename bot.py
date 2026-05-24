@@ -206,7 +206,6 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             repetidos_opcional = validar_jugada(loteria_opcional_tecnica, jugada_opcional)
 
-            # NUEVA LÓGICA: si la jugada secundaria tiene repetidos → no hay jugada disponible
             if repetidos_opcional:
                 await query.answer(
                     "❌ No hay nueva jugada disponible por el momento que podamos ofrecerte.",
@@ -214,10 +213,8 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
                 return
 
-            # INTERVALO SECUNDARIO
             intervalo_secundario = 30 if "ruleta" in loteria_opcional_tecnica.lower() else 60
 
-            # Cálculo correcto del margen secundario
             if intervalo_secundario == 60:
                 margen_inicio_dt = ahora.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
             else:
@@ -228,10 +225,8 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     siguiente_hora = ahora.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
                     margen_inicio_dt = siguiente_hora.replace(minute=30)
 
-            # Margen final = 4 horas después
             margen_final_dt = margen_inicio_dt + timedelta(hours=4)
 
-            # Límite máximo
             if intervalo_secundario == 60:
                 limite = margen_inicio_dt.replace(hour=19, minute=0, second=0, microsecond=0)
             else:
@@ -242,6 +237,10 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             margen_inicio = margen_inicio_dt.strftime("%I:%M %p")
             margen_final = margen_final_dt.strftime("%I:%M %p")
+
+            # NUEVA LÓGICA: si inicio == fin → mostrar solo una hora
+            if margen_inicio == margen_final:
+                margen_final = ""
 
             # Cambiar jugada y lotería visibles
             jugada = [md_escape(str(j)) for j in jugada_opcional]
@@ -269,11 +268,17 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     jugada_texto = " \\- ".join([f"*{j}*" for j in jugada])
 
+    # SORTEO INTELIGENTE
+    if margen_final:
+        sorteo_texto = f"{margen_inicio} - {margen_final}"
+    else:
+        sorteo_texto = margen_inicio
+
     mensaje = (
         "🔥 *ACTUALIZACIÓN DE JUGADA* 🔥\n"
         f"📅 *Última actualización:* `{ahora.strftime('%I:%M %p')}`\n\n"
         f"🎯 *Lotería:* *{md_escape(loteria_visible)}*\n"
-        f"🕒 *Sorteo:* `{margen_inicio} - {margen_final}`\n"
+        f"🕒 *Sorteo:* `{sorteo_texto}`\n"
         f"🐾 *Favorito:* *{favorito}*\n\n"
         "🔢 *Jugada del momento:*\n"
         f"{jugada_texto}"
