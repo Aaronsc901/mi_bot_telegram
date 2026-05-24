@@ -172,7 +172,7 @@ async def recibir_lista(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text("❌ Error al guardar en GitHub.")
 
-    return ConversationHandler.END
+    return CHOOSING   # ← CORREGIDO
 
 # ============================
 # MENÚ POST REGISTRO
@@ -220,7 +220,7 @@ async def menu_post_registro(update: Update, context: ContextTypes.DEFAULT_TYPE)
         texto += "\n".join([f"• {h}" for h in horarios])
 
         await query.message.reply_text(texto, parse_mode="Markdown")
-        return ConversationHandler.END
+        return CHOOSING
 
     # Finalizar
     if data == "finalizar":
@@ -239,6 +239,12 @@ def main():
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("regist", regist)],
         states={
+            CHOOSING: [
+                CallbackQueryHandler(
+                    menu_post_registro,
+                    pattern="^(otra_loteria|repetir_.*|ver_horarios_.*|finalizar)$"
+                )
+            ],
             LOTERIA: [CallbackQueryHandler(elegir_loteria)],
             LISTA: [MessageHandler(filters.TEXT & ~filters.COMMAND, recibir_lista)],
         },
@@ -246,10 +252,6 @@ def main():
     )
 
     app.add_handler(conv_handler)
-
-    # Handler del menú premium
-    app.add_handler(CallbackQueryHandler(menu_post_registro,
-                                         pattern="^(otra_loteria|repetir_.*|ver_horarios_.*|finalizar)$"))
 
     app.run_polling()
 
