@@ -1,5 +1,5 @@
 {
-  "loteria": "lotto activo",
+  "loteria": "Lotto Activo",
   "loteria_visible": "Lotto Activo - La Granjita",
   "validar_ambas": true,
   "sorteo": "11:30-3:30PM",
@@ -16,7 +16,7 @@
     "64",
     "66"
   ],
-  "loteria_opcional": "guacharo activo",
+  "loteria_opcional": "Guacharo Activo",
   "loteria_opcional_visible": "Guacharo Activo",
   "margen_opcional_activado": null
 }
