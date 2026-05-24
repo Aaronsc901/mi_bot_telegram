@@ -1,5 +1,5 @@
 {
-  "loteria": "Guacharo activo",
+  "loteria": "guacharo activo",
   "loteria_visible": "Guácharo Activo",
   "validar_ambas": false,
   "sorteo": "11:30-3:30PM",
@@ -17,7 +17,7 @@
     "17",
     "66"
   ],
-  "loteria_opcional": "Gucharo activo",
-  "loteria_opcional_visible": "Guácharo activo",
+  "loteria_opcional": "guacharo activo",
+  "loteria_opcional_visible": "Guácharo Activo",
   "margen_opcional_activado": null
 }
