@@ -1,22 +1,23 @@
 {
-  "loteria": "Ruleta royal",
-  "loteria_visible": "Ruleta Royal",
+  "loteria": "Guacharo activo",
+  "loteria_visible": "Guácharo Activo",
   "validar_ambas": false,
   "sorteo": "11:30-3:30PM",
-  "hora_tope": "14:30",
-  "intervalo": "30",
-  "favorito": "CAIMAN",
+  "hora_tope": "11:00",
+  "intervalo": "60",
+  "favorito": "PULPO",
   "jugada": [
-    "30",
-    "28",
-    "23"
+    "52",
+    "25",
+    "34",
+    "62"
   ],
   "jugada_opcional": [
-    "00",
-    "36",
-    "32"
+    "71",
+    "17",
+    "66"
   ],
-  "loteria_opcional": "lotto activo",
-  "loteria_opcional_visible": "Lotto activo/ La granjita",
-  "margen_opcional_activado": "2026-05-23T13:37:35.026515-04:00"
+  "loteria_opcional": "Gucharo activo",
+  "loteria_opcional_visible": "Guácharo activo",
+  "margen_opcional_activado": null
 }
