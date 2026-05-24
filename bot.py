@@ -189,16 +189,17 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # FAVORITO AUTOMÁTICO
     favorito_num = jugada_numeros[0]
 
-    # Selección inteligente del diccionario base
-    lv = loteria_visible.lower()
-    if "lotto" in lv and "granjita" in lv:
+    # Selección del diccionario usando SOLO la lotería técnica
+    lt = loteria_tecnica.lower()
+
+    if "lotto" in lt and "granjita" in lt:
         diccionario_base = "Lotto activo"
-    elif "lotto" in lv:
+    elif "lotto" in lt:
         diccionario_base = "Lotto activo"
-    elif "granjita" in lv:
+    elif "granjita" in lt:
         diccionario_base = "La Granjita"
     else:
-        diccionario_base = loteria_visible
+        diccionario_base = loteria_tecnica
 
     favorito_nombre = DICCIONARIO.get(diccionario_base, {}).get(favorito_num, "DESCONOCIDO")
     favorito = md_escape(f"{favorito_num} ({favorito_nombre})")
@@ -264,7 +265,6 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             margen_inicio = margen_inicio_dt.strftime("%I:%M %p")
             margen_final = margen_final_dt.strftime("%I:%M %p")
 
-            # NUEVA LÓGICA: si inicio == fin → mostrar solo una hora
             if margen_inicio == margen_final:
                 margen_final = ""
 
@@ -275,15 +275,16 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             # FAVORITO SECUNDARIO
             favorito_num = str(jugada_opcional[0])
 
-            lv2 = loteria_visible.lower()
-            if "lotto" in lv2 and "granjita" in lv2:
+            lt2 = loteria_opcional_tecnica.lower()
+
+            if "lotto" in lt2 and "granjita" in lt2:
                 diccionario_base2 = "Lotto activo"
-            elif "lotto" in lv2:
+            elif "lotto" in lt2:
                 diccionario_base2 = "Lotto activo"
-            elif "granjita" in lv2:
+            elif "granjita" in lt2:
                 diccionario_base2 = "La Granjita"
             else:
-                diccionario_base2 = loteria_visible
+                diccionario_base2 = loteria_opcional_tecnica
 
             favorito_nombre = DICCIONARIO.get(diccionario_base2, {}).get(favorito_num, "DESCONOCIDO")
             favorito = md_escape(f"{favorito_num} ({favorito_nombre})")
@@ -294,7 +295,6 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     jugada_texto = " \\- ".join([f"*{j}*" for j in jugada])
 
-    # SORTEO INTELIGENTE
     if margen_final:
         sorteo_texto = f"{margen_inicio} - {margen_final}"
     else:
