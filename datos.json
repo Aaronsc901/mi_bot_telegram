@@ -3,7 +3,7 @@
   "loteria_visible": "Guacharo Activo",
   "validar_ambas": false,
   "sorteo": "11:30-3:30PM",
-  "hora_tope": "11:00",
+  "hora_tope": "12:00",
   "intervalo": "60",
   "favorito": "PULPO",
   "jugada": [
