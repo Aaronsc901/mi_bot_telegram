@@ -1,7 +1,7 @@
 {
   "loteria": "Lotto Activo",
   "loteria_visible": "Lotto Activo - La Granjita",
-  "validar_ambas": false,
+  "validar_ambas": True,
   "sorteo": "11:30-3:30PM",
   "hora_tope": "03:00",
   "intervalo": "60",
