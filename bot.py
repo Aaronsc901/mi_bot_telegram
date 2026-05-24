@@ -42,6 +42,15 @@ def grupo_permitido(chat_id):
 
 MENSAJE_FIJO_ID = None
 
+# ---------------------------------------------------------
+# ANTI‑SPAM Y ANTI‑DOBLE EJECUCIÓN
+# ---------------------------------------------------------
+
+ULTIMA_ACCION = {}  # user_id → timestamp
+COOLDOWN = 10       # segundos entre consultas
+
+ULTIMA_EJECUCION_GLOBAL = 0
+COOLDOWN_GLOBAL = 3  # evita doble ejecución por latencia
 
 # ---------------------------------------------------------
 # UTILIDADES
@@ -52,7 +61,6 @@ def md_escape(text: str) -> str:
     for c in especiales:
         text = text.replace(c, f"\\{c}")
     return text
-
 
 # ---------------------------------------------------------
 # LECTURA DEL JSON REMOTO
@@ -67,7 +75,6 @@ def obtener_datos():
 
     datos["_sha"] = r["sha"]
     return datos
-
 
 # ---------------------------------------------------------
 # ESCRITURA DEL JSON REMOTO
@@ -92,7 +99,6 @@ def guardar_datos(datos):
     }
 
     requests.put(GITHUB_API_URL, headers=headers, json=payload)
-
 
 # ---------------------------------------------------------
 # CÁLCULO DE MARGEN PRINCIPAL
@@ -120,7 +126,6 @@ def calcular_margen(hora_tope_str, intervalo):
         margen_final.strftime("%I:%M %p")
     )
 
-
 # ---------------------------------------------------------
 # COMANDO /start
 # ---------------------------------------------------------
@@ -137,15 +142,36 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=reply_markup
     )
 
-
 # ---------------------------------------------------------
 # CALLBACK PRINCIPAL
 # ---------------------------------------------------------
 
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global MENSAJE_FIJO_ID
+    global MENSAJE_FIJO_ID, ULTIMA_EJECUCION_GLOBAL
 
     query = update.callback_query
+    user_id = query.from_user.id
+    ahora_ts = datetime.now().timestamp()
+
+    # -------------------------------
+    # ANTI-SPAM POR USUARIO
+    # -------------------------------
+    if user_id in ULTIMA_ACCION:
+        if ahora_ts - ULTIMA_ACCION[user_id] < COOLDOWN:
+            await query.answer("⏳ Espera unos segundos antes de consultar de nuevo.", show_alert=True)
+            return
+
+    ULTIMA_ACCION[user_id] = ahora_ts
+
+    # -------------------------------
+    # ANTI-DOBLE EJECUCIÓN GLOBAL
+    # -------------------------------
+    if ahora_ts - ULTIMA_EJECUCION_GLOBAL < COOLDOWN_GLOBAL:
+        await query.answer("⚠️ Procesando… intenta nuevamente en un momento.", show_alert=False)
+        return
+
+    ULTIMA_EJECUCION_GLOBAL = ahora_ts
+
     await query.answer()
 
     if not grupo_permitido(query.message.chat.id):
@@ -306,14 +332,12 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     MENSAJE_FIJO_ID = msg.message_id
 
-
 # ---------------------------------------------------------
 # COMANDOS /id y /reset
 # ---------------------------------------------------------
 
 async def get_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"Chat ID: {update.effective_chat.id}")
-
 
 async def reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global MENSAJE_FIJO_ID
@@ -324,7 +348,6 @@ async def reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
     guardar_datos(datos)
 
     await update.message.reply_text("Reiniciado. El próximo mensaje será nuevo.")
-
 
 # ---------------------------------------------------------
 # MAIN
@@ -339,7 +362,6 @@ def main():
     app.add_handler(CallbackQueryHandler(handle_callback))
 
     app.run_polling()
-
 
 if __name__ == "__main__":
     main()
