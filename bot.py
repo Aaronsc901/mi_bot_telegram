@@ -46,11 +46,11 @@ MENSAJE_FIJO_ID = None
 # ANTI‑SPAM Y ANTI‑DOBLE EJECUCIÓN
 # ---------------------------------------------------------
 
-ULTIMA_ACCION = {}  # user_id → timestamp
-COOLDOWN = 10       # segundos entre consultas
+ULTIMA_ACCION = {}
+COOLDOWN = 10
 
 ULTIMA_EJECUCION_GLOBAL = 0
-COOLDOWN_GLOBAL = 3  # evita doble ejecución por latencia
+COOLDOWN_GLOBAL = 3
 
 # ---------------------------------------------------------
 # UTILIDADES
@@ -61,6 +61,20 @@ def md_escape(text: str) -> str:
     for c in especiales:
         text = text.replace(c, f"\\{c}")
     return text
+
+# ---------------------------------------------------------
+# NORMALIZACIÓN ESPECIAL PARA 0 Y 00
+# ---------------------------------------------------------
+
+def normalizar_numero(n):
+    n = str(n)
+
+    if n == "0":
+        return "0"      # DELFIN
+    if n == "00":
+        return "00"     # BALLENA
+
+    return n.zfill(2)   # resto de números
 
 # ---------------------------------------------------------
 # LECTURA DEL JSON REMOTO
@@ -153,9 +167,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = query.from_user.id
     ahora_ts = datetime.now().timestamp()
 
-    # -------------------------------
-    # ANTI-SPAM POR USUARIO
-    # -------------------------------
+    # ANTI-SPAM
     if user_id in ULTIMA_ACCION:
         if ahora_ts - ULTIMA_ACCION[user_id] < COOLDOWN:
             await query.answer("⏳ Espera unos segundos antes de consultar de nuevo.", show_alert=True)
@@ -163,9 +175,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     ULTIMA_ACCION[user_id] = ahora_ts
 
-    # -------------------------------
-    # ANTI-DOBLE EJECUCIÓN GLOBAL
-    # -------------------------------
+    # ANTI DOBLE EJECUCIÓN
     if ahora_ts - ULTIMA_EJECUCION_GLOBAL < COOLDOWN_GLOBAL:
         await query.answer("⚠️ Procesando… intenta nuevamente en un momento.", show_alert=False)
         return
@@ -179,23 +189,24 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     datos = obtener_datos()
 
-    # Datos principales
+    # DATOS PRINCIPALES
     loteria_tecnica = datos["loteria"]
     loteria_visible = datos.get("loteria_visible", datos["loteria"])
 
-    jugada = [md_escape(str(j)) for j in datos["jugada"]]
-    jugada_numeros = [str(j) for j in datos["jugada"]]
+    # NORMALIZAR NUMEROS
+    jugada_numeros = [normalizar_numero(j) for j in datos["jugada"]]
+    jugada = [md_escape(normalizar_numero(j)) for j in datos["jugada"]]
 
-    # FAVORITO AUTOMÁTICO
+    # FAVORITO
     favorito_num = jugada_numeros[0]
 
-    # Selección del diccionario usando SOLO la lotería técnica
+    # SELECCIÓN DEL DICCIONARIO
     lt = loteria_tecnica.lower()
 
     if "lotto" in lt and "granjita" in lt:
-        diccionario_base = "Lotto activo"
+        diccionario_base = "Lotto Activo"
     elif "lotto" in lt:
-        diccionario_base = "Lotto activo"
+        diccionario_base = "Lotto Activo"
     elif "granjita" in lt:
         diccionario_base = "La Granjita"
     else:
@@ -204,10 +215,10 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     favorito_nombre = DICCIONARIO.get(diccionario_base, {}).get(favorito_num, "DESCONOCIDO")
     favorito = md_escape(f"{favorito_num} ({favorito_nombre})")
 
-    # Validación principal
+    # VALIDACIÓN PRINCIPAL
     repetidos = validar_jugada(loteria_tecnica, jugada_numeros)
 
-    # Margen principal
+    # MARGEN PRINCIPAL
     margen_inicio, margen_final = calcular_margen(datos["hora_tope"], str(datos["intervalo"]))
 
     ahora = datetime.now(ZoneInfo("America/Caracas"))
@@ -221,7 +232,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     usar_opcional = repetidos or activar_por_tiempo
 
     # ---------------------------------------------------------
-    # JUGADA SECUNDARIA (CON MARGEN CORREGIDO + NUEVA LÓGICA)
+    # JUGADA SECUNDARIA
     # ---------------------------------------------------------
 
     if usar_opcional:
@@ -231,7 +242,9 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if jugada_opcional and loteria_opcional_tecnica:
 
-            repetidos_opcional = validar_jugada(loteria_opcional_tecnica, jugada_opcional)
+            jugada_opcional_norm = [normalizar_numero(j) for j in jugada_opcional]
+
+            repetidos_opcional = validar_jugada(loteria_opcional_tecnica, jugada_opcional_norm)
 
             if repetidos_opcional:
                 await query.answer(
@@ -268,19 +281,16 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if margen_inicio == margen_final:
                 margen_final = ""
 
-            # Cambiar jugada y lotería visibles
-            jugada = [md_escape(str(j)) for j in jugada_opcional]
-            loteria_visible = loteria_opcional_visible
-
-            # FAVORITO SECUNDARIO
-            favorito_num = str(jugada_opcional[0])
+            # CAMBIAR JUGADA
+            jugada = [md_escape(j) for j in jugada_opcional_norm]
+            favorito_num = jugada_opcional_norm[0]
 
             lt2 = loteria_opcional_tecnica.lower()
 
             if "lotto" in lt2 and "granjita" in lt2:
-                diccionario_base2 = "Lotto activo"
+                diccionario_base2 = "Lotto Activo"
             elif "lotto" in lt2:
-                diccionario_base2 = "Lotto activo"
+                diccionario_base2 = "Lotto Activo"
             elif "granjita" in lt2:
                 diccionario_base2 = "La Granjita"
             else:
@@ -288,6 +298,8 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             favorito_nombre = DICCIONARIO.get(diccionario_base2, {}).get(favorito_num, "DESCONOCIDO")
             favorito = md_escape(f"{favorito_num} ({favorito_nombre})")
+
+            loteria_visible = loteria_opcional_visible
 
     # ---------------------------------------------------------
     # MENSAJE FINAL
