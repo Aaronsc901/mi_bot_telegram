@@ -2,7 +2,6 @@
   "loteria": "Lotto Activo",
   "loteria_visible": "Lotto Activo",
   "validar_ambas": true,
-  "sorteo": "11:30-3:30PM",
   "hora_tope": "15:00",
   "intervalo": "60",
   "jugada": [
