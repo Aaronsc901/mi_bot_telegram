@@ -1,17 +1,16 @@
 {
-  "loteria": "Guacharo Activo",
-  "loteria_visible": "Guacharo Activo",
-  "validar_ambas": false,
-  "hora_tope": "12:00",
+  "loteria": "Lotto Activo",
+  "loteria_visible": "Lotto Activo",
+  "validar_ambas": true,
+  "hora_tope": "14:00",
   "intervalo": "60",
   "jugada": [
-    "23",
-    "74",
-    "45"
+    "35",
+    "19",
+    "33"
   ],
   "jugada_opcional": [
     "3",
-    "13",
     "38",
     "28"
   ],
