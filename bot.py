@@ -81,7 +81,6 @@ def obtener_proximo_sorteo(loteria, datos):
 
     lot = loteria.strip().lower()
 
-    # Buscar coincidencia exacta o parcial
     for key in horarios_json.keys():
         if key.lower() == lot or lot in key.lower():
             lista_horas = horarios_json[key]
@@ -95,7 +94,6 @@ def obtener_proximo_sorteo(loteria, datos):
     for h in lista_horas:
         hora_sorteo = datetime.strptime(h, "%H:%M").time()
 
-        # CORRECCIÓN: datetime con zona horaria
         dt_sorteo = datetime.combine(
             ahora.date(),
             hora_sorteo,
@@ -225,11 +223,10 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     datos = obtener_datos()
 
-    # DATOS PRINCIPALES
     loteria_tecnica = datos["loteria"]
 
     # ---------------------------------------------------------
-    # GUARDAR PRÓXIMO SORTEO EN EL JSON
+    # GUARDAR PRÓXIMO SORTEO
     # ---------------------------------------------------------
     proximo_sorteo = obtener_proximo_sorteo(loteria_tecnica, datos)
     datos["proximo_sorteo"] = proximo_sorteo
@@ -237,7 +234,26 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         guardar_datos(datos)
 
     # ---------------------------------------------------------
-    # (TODO LO DEMÁS QUEDA IGUAL — NO SE MODIFICÓ NADA)
+    # BLOQUEO SI FALTAN MENOS DE 10 MINUTOS
+    # ---------------------------------------------------------
+    if proximo_sorteo:
+        tz = ZoneInfo("America/Caracas")
+        ahora = datetime.now(tz)
+
+        hora_sorteo = datetime.strptime(proximo_sorteo, "%H:%M").time()
+        dt_sorteo = datetime.combine(ahora.date(), hora_sorteo, tzinfo=tz)
+
+        diferencia = (dt_sorteo - ahora).total_seconds() / 60
+
+        if 0 <= diferencia <= 10:
+            await query.answer(
+                "⛔ Esta jugada no puede ser actualizada ya que faltan pocos minutos para cerrar el sorteo.",
+                show_alert=True
+            )
+            return
+
+    # ---------------------------------------------------------
+    # RESTO DEL CÓDIGO (NO MODIFICADO)
     # ---------------------------------------------------------
 
     loteria_visible = datos.get("loteria_visible", datos["loteria"])
