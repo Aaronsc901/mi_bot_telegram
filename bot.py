@@ -71,6 +71,37 @@ def normalizar_numero(n):
     return n.zfill(2)
 
 # ---------------------------------------------------------
+# FUNCIONES NUEVAS (NO EXISTÍAN)
+# ---------------------------------------------------------
+
+def faltan_menos_de_5(proximo_sorteo):
+    if not proximo_sorteo:
+        return False
+
+    tz = ZoneInfo("America/Caracas")
+    ahora = datetime.now(tz)
+
+    hora_sorteo = datetime.strptime(proximo_sorteo, "%H:%M").time()
+    dt_sorteo = datetime.combine(ahora.date(), hora_sorteo, tzinfo=tz)
+
+    diferencia = dt_sorteo - ahora
+    return diferencia.total_seconds() <= 300  # 5 minutos
+
+
+def falta_una_hora(proximo_sorteo):
+    if not proximo_sorteo:
+        return False
+
+    tz = ZoneInfo("America/Caracas")
+    ahora = datetime.now(tz)
+
+    hora_sorteo = datetime.strptime(proximo_sorteo, "%H:%M").time()
+    dt_sorteo = datetime.combine(ahora.date(), hora_sorteo, tzinfo=tz)
+
+    diferencia = dt_sorteo - ahora
+    return diferencia.total_seconds() <= 3600  # 1 hora
+
+# ---------------------------------------------------------
 # OBTENER PRÓXIMO SORTEO DESDE EL JSON (CORREGIDO)
 # ---------------------------------------------------------
 
@@ -81,7 +112,6 @@ def obtener_proximo_sorteo(loteria, datos):
 
     lot = loteria.strip().lower()
 
-    # Buscar coincidencia exacta o parcial
     for key in horarios_json.keys():
         if key.lower() == lot or lot in key.lower():
             lista_horas = horarios_json[key]
@@ -95,7 +125,6 @@ def obtener_proximo_sorteo(loteria, datos):
     for h in lista_horas:
         hora_sorteo = datetime.strptime(h, "%H:%M").time()
 
-        # CORRECCIÓN: datetime con zona horaria
         dt_sorteo = datetime.combine(
             ahora.date(),
             hora_sorteo,
@@ -225,11 +254,10 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     datos = obtener_datos()
 
-    # DATOS PRINCIPALES
     loteria_tecnica = datos["loteria"]
 
     # ---------------------------------------------------------
-    # GUARDAR PRÓXIMO SORTEO EN EL JSON
+    # GUARDAR PRÓXIMO SORTEO
     # ---------------------------------------------------------
     proximo_sorteo = obtener_proximo_sorteo(loteria_tecnica, datos)
     datos["proximo_sorteo"] = proximo_sorteo
@@ -237,14 +265,49 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         guardar_datos(datos)
 
     # ---------------------------------------------------------
-    # (TODO LO DEMÁS QUEDA IGUAL — NO SE MODIFICÓ NADA)
+    # BLOQUEO POR TIEMPO (MENOS DE 5 MINUTOS)
+    # ---------------------------------------------------------
+    if faltan_menos_de_5(proximo_sorteo):
+        await query.answer(
+            "⛔ Faltan menos de 5 minutos para el sorteo.\nEspera al próximo para actualizar.",
+            show_alert=True
+        )
+        return
+
+    # ---------------------------------------------------------
+    # SELECCIÓN DE JUGADA (PRINCIPAL / SECUNDARIA)
     # ---------------------------------------------------------
 
-    loteria_visible = datos.get("loteria_visible", datos["loteria"])
+    jugada_principal = [normalizar_numero(j) for j in datos["jugada"]]
+    repetidos_principal = validar_jugada(loteria_tecnica, jugada_principal)
 
-    jugada_numeros = [normalizar_numero(j) for j in datos["jugada"]]
-    jugada = [md_escape(normalizar_numero(j)) for j in datos["jugada"]]
+    jugada_opcional = datos.get("jugada_opcional", [])
+    loteria_opcional_tecnica = datos.get("loteria_opcional", None)
 
+    usar_opcional = False
+
+    if jugada_opcional and loteria_opcional_tecnica:
+        jugada_opcional_norm = [normalizar_numero(j) for j in jugada_opcional]
+        repetidos_opcional = validar_jugada(loteria_opcional_tecnica, jugada_opcional_norm)
+
+        if repetidos_principal and not repetidos_opcional:
+            usar_opcional = True
+
+        elif falta_una_hora(proximo_sorteo) and not repetidos_opcional:
+            usar_opcional = True
+
+    if usar_opcional:
+        jugada_numeros = jugada_opcional_norm
+        loteria_visible = datos.get("loteria_opcional_visible", loteria_opcional_tecnica)
+    else:
+        jugada_numeros = jugada_principal
+        loteria_visible = datos.get("loteria_visible", datos["loteria"])
+
+    # ---------------------------------------------------------
+    # (TODO LO DEMÁS QUEDA IGUAL)
+    # ---------------------------------------------------------
+
+    jugada = [md_escape(j) for j in jugada_numeros]
     favorito_num = jugada_numeros[0]
 
     lt = loteria_tecnica.lower()
@@ -261,42 +324,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     favorito_nombre = DICCIONARIO.get(diccionario_base, {}).get(favorito_num, "DESCONOCIDO")
     favorito = md_escape(f"{favorito_num} ({favorito_nombre})")
 
-    repetidos = validar_jugada(loteria_tecnica, jugada_numeros)
-
     margen_inicio, margen_final = calcular_margen(datos["hora_tope"], str(datos["intervalo"]))
-
-    activar_por_tiempo = False
-    usar_opcional = repetidos
-
-    if usar_opcional:
-        jugada_opcional = datos.get("jugada_opcional", [])
-        loteria_opcional_tecnica = datos.get("loteria_opcional", None)
-        loteria_opcional_visible = datos.get("loteria_opcional_visible", loteria_opcional_tecnica)
-
-        if jugada_opcional and loteria_opcional_tecnica:
-
-            jugada_opcional_norm = [normalizar_numero(j) for j in jugada_opcional]
-            repetidos_opcional = validar_jugada(loteria_opcional_tecnica, jugada_opcional_norm)
-
-            if not repetidos_opcional:
-                jugada = [md_escape(j) for j in jugada_opcional_norm]
-                favorito_num = jugada_opcional_norm[0]
-
-                lt2 = loteria_opcional_tecnica.lower()
-
-                if "lotto" in lt2 and "granjita" in lt2:
-                    diccionario_base2 = "Lotto Activo"
-                elif "lotto" in lt2:
-                    diccionario_base2 = "Lotto Activo"
-                elif "granjita" in lt2:
-                    diccionario_base2 = "La Granjita"
-                else:
-                    diccionario_base2 = loteria_opcional_tecnica
-
-                favorito_nombre = DICCIONARIO.get(diccionario_base2, {}).get(favorito_num, "DESCONOCIDO")
-                favorito = md_escape(f"{favorito_num} ({favorito_nombre})")
-
-                loteria_visible = loteria_opcional_visible
 
     jugada_texto = " \\- ".join([f"*{j}*" for j in jugada])
 
