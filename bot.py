@@ -33,7 +33,7 @@ GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
 GITHUB_API_URL = "https://api.github.com/repos/Aaronsc901/mi_bot_telegram/contents/datos.json?ref=master"
 
-MODO_TEST = True
+MODO_TEST = False
 GRUPO_REAL_ID = -1002793980909
 GRUPO_TEST_ID = -5197810505
 
@@ -47,7 +47,7 @@ MENSAJE_FIJO_ID = None
 # ---------------------------------------------------------
 
 ULTIMA_ACCION = {}
-COOLDOWN = 60
+COOLDOWN = 60  # 60 segundos por usuario
 
 ULTIMA_EJECUCION_GLOBAL = 0
 COOLDOWN_GLOBAL = 3
@@ -161,15 +161,17 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = query.from_user.id
     ahora_ts = datetime.now().timestamp()
 
-    # ANTI-SPAM
+    # ANTI-SPAM POR USUARIO
     if user_id in ULTIMA_ACCION:
-        if ahora_ts - ULTIMA_ACCION[user_id] < COOLDOWN:
-            await query.answer("⏳ Espera unos segundos antes de consultar de nuevo.", show_alert=True)
+        diferencia = ahora_ts - ULTIMA_ACCION[user_id]
+        if diferencia < COOLDOWN:
+            faltan = int(COOLDOWN - diferencia)
+            await query.answer(f"⏳ Debes esperar {faltan} segundos para volver a consultar.", show_alert=True)
             return
 
     ULTIMA_ACCION[user_id] = ahora_ts
 
-    # ANTI DOBLE EJECUCIÓN
+    # ANTI DOBLE EJECUCIÓN GLOBAL
     if ahora_ts - ULTIMA_EJECUCION_GLOBAL < COOLDOWN_GLOBAL:
         await query.answer("⚠️ Procesando… intenta nuevamente en un momento.", show_alert=False)
         return
@@ -210,14 +212,36 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     margen_inicio, margen_final = calcular_margen(datos["hora_tope"], str(datos["intervalo"]))
 
+    # ---------------------------------------------------------
+    # BLOQUEO POR TIEMPO (AMBOS MÁRGENES)
+    # ---------------------------------------------------------
+
     ahora = datetime.now(ZoneInfo("America/Caracas"))
-    margen_final_dt = datetime.strptime(margen_final, "%I:%M %p").replace(
-        year=ahora.year, month=ahora.month, day=ahora.day, tzinfo=ZoneInfo("America/Caracas")
-    )
 
-    falta = margen_final_dt - ahora
-    activar_por_tiempo = falta.total_seconds() <= 3600
+    def bloquear_por_tiempo(m_inicio, m_final):
+        mi = datetime.strptime(m_inicio, "%I:%M %p").replace(
+            year=ahora.year, month=ahora.month, day=ahora.day, tzinfo=ZoneInfo("America/Caracas")
+        )
+        mf = datetime.strptime(m_final, "%I:%M %p").replace(
+            year=ahora.year, month=ahora.month, day=ahora.day, tzinfo=ZoneInfo("America/Caracas")
+        )
 
+        # Faltan menos de 8 minutos
+        if 0 <= (mi - ahora).total_seconds() <= 480:
+            return True
+
+        # Pasaron más de 5 minutos
+        if (ahora - mf).total_seconds() > 300:
+            return True
+
+        return False
+
+    # Bloqueo margen principal
+    if bloquear_por_tiempo(margen_inicio, margen_final):
+        await query.answer("⛔ Consulta no disponible en este momento.", show_alert=True)
+        return
+
+    activar_por_tiempo = (datetime.strptime(margen_final, "%I:%M %p") - ahora).total_seconds() <= 3600
     usar_opcional = repetidos or activar_por_tiempo
 
     # ---------------------------------------------------------
@@ -236,7 +260,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             if repetidos_opcional:
                 await query.answer(
-                    "❌ No hay nueva jugada disponible por el momento que podamos ofrecerte.",
+                    "❌ No hay nueva jugada disponible por el momento.",
                     show_alert=True
                 )
                 return
@@ -277,6 +301,11 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 datos["margen_opcional_inicio"] = margen_inicio
                 datos["margen_opcional_final"] = margen_final
                 guardar_datos(datos)
+
+            # BLOQUEO TAMBIÉN PARA EL MARGEN SECUNDARIO
+            if bloquear_por_tiempo(margen_inicio, margen_final):
+                await query.answer("⛔ Consulta no disponible en este momento.", show_alert=True)
+                return
 
             # CAMBIAR JUGADA
             jugada = [md_escape(j) for j in jugada_opcional_norm]
