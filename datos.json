@@ -3,7 +3,7 @@
   "loteria_visible": "Ruleta Royal",
   "validar_ambas": false,
   "hora_tope": "15:30",
-  "proximo_sorteo": null,
+  "proximo_sorteo": "14:30",
   "intervalo": "30",
   "jugada": [
     "36",
