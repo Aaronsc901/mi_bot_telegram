@@ -33,7 +33,7 @@ GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
 GITHUB_API_URL = "https://api.github.com/repos/Aaronsc901/mi_bot_telegram/contents/datos.json?ref=master"
 
-MODO_TEST = False
+MODO_TEST = True
 GRUPO_REAL_ID = -1002793980909
 GRUPO_TEST_ID = -5197810505
 
@@ -69,6 +69,36 @@ def normalizar_numero(n):
     if n == "00":
         return "00"
     return n.zfill(2)
+
+# ---------------------------------------------------------
+# OBTENER PRÓXIMO SORTEO DESDE EL JSON
+# ---------------------------------------------------------
+
+def obtener_proximo_sorteo(loteria, datos):
+    horarios_json = datos.get("horarios", {})
+    if not horarios_json:
+        return None
+
+    lot = loteria.strip().lower()
+
+    # Buscar coincidencia exacta o parcial
+    for key in horarios_json.keys():
+        if key.lower() == lot or lot in key.lower():
+            lista_horas = horarios_json[key]
+            break
+    else:
+        return None
+
+    ahora = datetime.now(ZoneInfo("America/Caracas"))
+
+    for h in lista_horas:
+        hora_sorteo = datetime.strptime(h, "%H:%M").time()
+        dt_sorteo = datetime.combine(ahora.date(), hora_sorteo)
+
+        if dt_sorteo > ahora:
+            return h
+
+    return lista_horas[0]
 
 # ---------------------------------------------------------
 # LECTURA DEL JSON REMOTO
@@ -109,7 +139,7 @@ def guardar_datos(datos):
     requests.put(GITHUB_API_URL, headers=headers, json=payload)
 
 # ---------------------------------------------------------
-# CÁLCULO DE MARGEN PRINCIPAL (SE MANTIENE, PERO SIN BLOQUEO)
+# CÁLCULO DE MARGEN PRINCIPAL
 # ---------------------------------------------------------
 
 def calcular_margen(hora_tope_str, intervalo):
@@ -153,7 +183,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 # ---------------------------------------------------------
-# CALLBACK PRINCIPAL (SIN BLOQUEO DE HORARIO)
+# CALLBACK PRINCIPAL
 # ---------------------------------------------------------
 
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -190,6 +220,18 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # DATOS PRINCIPALES
     loteria_tecnica = datos["loteria"]
+
+    # ---------------------------------------------------------
+    # GUARDAR PRÓXIMO SORTEO EN EL JSON
+    # ---------------------------------------------------------
+    proximo_sorteo = obtener_proximo_sorteo(loteria_tecnica, datos)
+    datos["proximo_sorteo"] = proximo_sorteo
+    guardar_datos(datos)
+
+    # ---------------------------------------------------------
+    # (TODO LO DEMÁS QUEDA IGUAL — NO SE MODIFICÓ NADA)
+    # ---------------------------------------------------------
+
     loteria_visible = datos.get("loteria_visible", datos["loteria"])
 
     jugada_numeros = [normalizar_numero(j) for j in datos["jugada"]]
@@ -215,12 +257,8 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     margen_inicio, margen_final = calcular_margen(datos["hora_tope"], str(datos["intervalo"]))
 
-    activar_por_tiempo = False  # YA NO SE USA
-    usar_opcional = repetidos  # SOLO SI HAY REPETIDOS
-
-    # ---------------------------------------------------------
-    # JUGADA SECUNDARIA (SIN BLOQUEO DE HORARIO)
-    # ---------------------------------------------------------
+    activar_por_tiempo = False
+    usar_opcional = repetidos
 
     if usar_opcional:
         jugada_opcional = datos.get("jugada_opcional", [])
@@ -251,10 +289,6 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 favorito = md_escape(f"{favorito_num} ({favorito_nombre})")
 
                 loteria_visible = loteria_opcional_visible
-
-    # ---------------------------------------------------------
-    # MENSAJE FINAL
-    # ---------------------------------------------------------
 
     jugada_texto = " \\- ".join([f"*{j}*" for j in jugada])
 
