@@ -71,7 +71,7 @@ def normalizar_numero(n):
     return n.zfill(2)
 
 # ---------------------------------------------------------
-# OBTENER PRÓXIMO SORTEO DESDE EL JSON
+# OBTENER PRÓXIMO SORTEO DESDE EL JSON (CORREGIDO)
 # ---------------------------------------------------------
 
 def obtener_proximo_sorteo(loteria, datos):
@@ -89,11 +89,18 @@ def obtener_proximo_sorteo(loteria, datos):
     else:
         return None
 
-    ahora = datetime.now(ZoneInfo("America/Caracas"))
+    tz = ZoneInfo("America/Caracas")
+    ahora = datetime.now(tz)
 
     for h in lista_horas:
         hora_sorteo = datetime.strptime(h, "%H:%M").time()
-        dt_sorteo = datetime.combine(ahora.date(), hora_sorteo)
+
+        # CORRECCIÓN: datetime con zona horaria
+        dt_sorteo = datetime.combine(
+            ahora.date(),
+            hora_sorteo,
+            tzinfo=tz
+        )
 
         if dt_sorteo > ahora:
             return h
