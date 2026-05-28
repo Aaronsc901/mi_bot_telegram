@@ -33,7 +33,7 @@ GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
 GITHUB_API_URL = "https://api.github.com/repos/Aaronsc901/mi_bot_telegram/contents/datos.json?ref=master"
 
-MODO_TEST = True
+MODO_TEST = False
 GRUPO_REAL_ID = -1002793980909
 GRUPO_TEST_ID = -5197810505
 
@@ -75,7 +75,7 @@ def normalizar_numero(n):
 # ---------------------------------------------------------
 
 def obtener_datos():
-    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+    headers = {"Authorization": f"token GITHUB_TOKEN"}
     r = requests.get(GITHUB_API_URL, headers=headers).json()
 
     contenido = base64.b64decode(r["content"]).decode()
@@ -96,7 +96,7 @@ def guardar_datos(datos):
     ).decode()
 
     headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
+        "Authorization": f"token GITHUB_TOKEN",
         "Accept": "application/vnd.github.v3+json"
     }
 
@@ -147,18 +147,16 @@ def margen_es_viejo(m_inicio, m_final, ahora):
             year=ahora.year, month=ahora.month, day=ahora.day, tzinfo=ZoneInfo("America/Caracas")
         )
 
-        # Si el margen final ya pasó hace más de 5 minutos → margen viejo
         if (ahora - mf).total_seconds() > 300:
             return True
 
-        # Si el margen final está antes del inicio → margen corrupto
         if mf < mi:
             return True
 
         return False
 
     except:
-        return True  # Si falla el parseo, lo tratamos como viejo
+        return True
 
 # ---------------------------------------------------------
 # COMANDO /start
@@ -249,10 +247,10 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         margen_inicio, margen_final = calcular_margen(datos["hora_tope"], str(datos["intervalo"]))
 
     # ---------------------------------------------------------
-    # BLOQUEO POR TIEMPO (AMBOS MÁRGENES)
+    # BLOQUEO POR TIEMPO (CON MENSAJES CLAROS)
     # ---------------------------------------------------------
 
-    def bloquear_por_tiempo(m_inicio, m_final):
+    def bloqueo_motivo(m_inicio, m_final):
         mi = datetime.strptime(m_inicio, "%I:%M %p").replace(
             year=ahora.year, month=ahora.month, day=ahora.day, tzinfo=ZoneInfo("America/Caracas")
         )
@@ -260,19 +258,26 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             year=ahora.year, month=ahora.month, day=ahora.day, tzinfo=ZoneInfo("America/Caracas")
         )
 
-        # Faltan menos de 8 minutos
         if 0 <= (mi - ahora).total_seconds() <= 480:
-            return True
+            return "faltan"
 
-        # Pasaron más de 5 minutos
         if (ahora - mf).total_seconds() > 300:
-            return True
+            return "pasaron"
 
-        return False
+        return None
 
-    # Bloqueo margen principal
-    if bloquear_por_tiempo(margen_inicio, margen_final):
-        await query.answer("⛔ Consulta no disponible en este momento.", show_alert=True)
+    motivo = bloqueo_motivo(margen_inicio, margen_final)
+    if motivo:
+        if motivo == "faltan":
+            await query.answer(
+                "⛔ No disponible.\nFaltan pocos minutos para el sorteo.",
+                show_alert=True
+            )
+        else:
+            await query.answer(
+                "⛔ El sorteo ya pasó.\nNo se permiten consultas fuera del horario válido.",
+                show_alert=True
+            )
         return
 
     activar_por_tiempo = (datetime.strptime(margen_final, "%I:%M %p") - ahora).total_seconds() <= 3600
@@ -343,8 +348,18 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 guardar_datos(datos)
 
             # BLOQUEO TAMBIÉN PARA EL MARGEN SECUNDARIO
-            if bloquear_por_tiempo(margen_inicio, margen_final):
-                await query.answer("⛔ Consulta no disponible en este momento.", show_alert=True)
+            motivo = bloqueo_motivo(margen_inicio, margen_final)
+            if motivo:
+                if motivo == "faltan":
+                    await query.answer(
+                        "⛔ No disponible.\nFaltan pocos minutos para el sorteo.",
+                        show_alert=True
+                    )
+                else:
+                    await query.answer(
+                        "⛔ El sorteo ya pasó.\nNo se permiten consultas fuera del horario válido.",
+                        show_alert=True
+                    )
                 return
 
             # CAMBIAR JUGADA
