@@ -33,7 +33,7 @@ GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
 GITHUB_API_URL = "https://api.github.com/repos/Aaronsc901/mi_bot_telegram/contents/datos.json?ref=master"
 
-MODO_TEST = True
+MODO_TEST = False
 GRUPO_REAL_ID = -1002793980909
 GRUPO_TEST_ID = -5197810505
 
@@ -75,7 +75,7 @@ def normalizar_numero(n):
 # ---------------------------------------------------------
 
 def obtener_datos():
-    headers = {"Authorization": f"token GITHUB_TOKEN"}
+    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
     r = requests.get(GITHUB_API_URL, headers=headers).json()
 
     contenido = base64.b64decode(r["content"]).decode()
@@ -96,7 +96,7 @@ def guardar_datos(datos):
     ).decode()
 
     headers = {
-        "Authorization": f"token GITHUB_TOKEN",
+        "Authorization": f"token {GITHUB_TOKEN}",
         "Accept": "application/vnd.github.v3+json"
     }
 
