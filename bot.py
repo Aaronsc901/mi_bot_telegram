@@ -62,19 +62,13 @@ def md_escape(text: str) -> str:
         text = text.replace(c, f"\\{c}")
     return text
 
-# ---------------------------------------------------------
-# NORMALIZACIÓN ESPECIAL PARA 0 Y 00
-# ---------------------------------------------------------
-
 def normalizar_numero(n):
     n = str(n)
-
     if n == "0":
-        return "0"      # DELFIN
+        return "0"
     if n == "00":
-        return "00"     # BALLENA
-
-    return n.zfill(2)   # resto de números
+        return "00"
+    return n.zfill(2)
 
 # ---------------------------------------------------------
 # LECTURA DEL JSON REMOTO
@@ -193,14 +187,11 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     loteria_tecnica = datos["loteria"]
     loteria_visible = datos.get("loteria_visible", datos["loteria"])
 
-    # NORMALIZAR NUMEROS
     jugada_numeros = [normalizar_numero(j) for j in datos["jugada"]]
     jugada = [md_escape(normalizar_numero(j)) for j in datos["jugada"]]
 
-    # FAVORITO
     favorito_num = jugada_numeros[0]
 
-    # SELECCIÓN DEL DICCIONARIO
     lt = loteria_tecnica.lower()
 
     if "lotto" in lt and "granjita" in lt:
@@ -215,10 +206,8 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     favorito_nombre = DICCIONARIO.get(diccionario_base, {}).get(favorito_num, "DESCONOCIDO")
     favorito = md_escape(f"{favorito_num} ({favorito_nombre})")
 
-    # VALIDACIÓN PRINCIPAL
     repetidos = validar_jugada(loteria_tecnica, jugada_numeros)
 
-    # MARGEN PRINCIPAL
     margen_inicio, margen_final = calcular_margen(datos["hora_tope"], str(datos["intervalo"]))
 
     ahora = datetime.now(ZoneInfo("America/Caracas"))
@@ -232,7 +221,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     usar_opcional = repetidos or activar_por_tiempo
 
     # ---------------------------------------------------------
-    # JUGADA SECUNDARIA
+    # JUGADA SECUNDARIA (CON MARGEN CONGELADO)
     # ---------------------------------------------------------
 
     if usar_opcional:
@@ -243,7 +232,6 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if jugada_opcional and loteria_opcional_tecnica:
 
             jugada_opcional_norm = [normalizar_numero(j) for j in jugada_opcional]
-
             repetidos_opcional = validar_jugada(loteria_opcional_tecnica, jugada_opcional_norm)
 
             if repetidos_opcional:
@@ -253,33 +241,42 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
                 return
 
-            intervalo_secundario = 30 if "ruleta" in loteria_opcional_tecnica.lower() else 60
+            # SI YA EXISTE MARGEN CONGELADO → USARLO
+            if datos.get("margen_opcional_inicio") and datos.get("margen_opcional_final"):
+                margen_inicio = datos["margen_opcional_inicio"]
+                margen_final = datos["margen_opcional_final"]
 
-            if intervalo_secundario == 60:
-                margen_inicio_dt = ahora.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
             else:
-                minuto = ahora.minute
-                if minuto < 30:
-                    margen_inicio_dt = ahora.replace(minute=30, second=0, microsecond=0)
+                # CALCULAR NUEVO MARGEN (Y CONGELARLO)
+                intervalo_secundario = 30 if "ruleta" in loteria_opcional_tecnica.lower() else 60
+
+                if intervalo_secundario == 60:
+                    margen_inicio_dt = ahora.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
                 else:
-                    siguiente_hora = ahora.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
-                    margen_inicio_dt = siguiente_hora.replace(minute=30)
+                    minuto = ahora.minute
+                    if minuto < 30:
+                        margen_inicio_dt = ahora.replace(minute=30, second=0, microsecond=0)
+                    else:
+                        siguiente_hora = ahora.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+                        margen_inicio_dt = siguiente_hora.replace(minute=30)
 
-            margen_final_dt = margen_inicio_dt + timedelta(hours=4)
+                margen_final_dt = margen_inicio_dt + timedelta(hours=4)
 
-            if intervalo_secundario == 60:
-                limite = margen_inicio_dt.replace(hour=19, minute=0, second=0, microsecond=0)
-            else:
-                limite = margen_inicio_dt.replace(hour=20, minute=30, second=0, microsecond=0)
+                if intervalo_secundario == 60:
+                    limite = margen_inicio_dt.replace(hour=19, minute=0, second=0, microsecond=0)
+                else:
+                    limite = margen_inicio_dt.replace(hour=20, minute=30, second=0, microsecond=0)
 
-            if margen_final_dt > limite:
-                margen_final_dt = limite
+                if margen_final_dt > limite:
+                    margen_final_dt = limite
 
-            margen_inicio = margen_inicio_dt.strftime("%I:%M %p")
-            margen_final = margen_final_dt.strftime("%I:%M %p")
+                margen_inicio = margen_inicio_dt.strftime("%I:%M %p")
+                margen_final = margen_final_dt.strftime("%I:%M %p")
 
-            if margen_inicio == margen_final:
-                margen_final = ""
+                # GUARDAR MARGEN CONGELADO
+                datos["margen_opcional_inicio"] = margen_inicio
+                datos["margen_opcional_final"] = margen_final
+                guardar_datos(datos)
 
             # CAMBIAR JUGADA
             jugada = [md_escape(j) for j in jugada_opcional_norm]
@@ -356,7 +353,8 @@ async def reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
     MENSAJE_FIJO_ID = None
 
     datos = obtener_datos()
-    datos["margen_opcional_activado"] = None
+    datos["margen_opcional_inicio"] = None
+    datos["margen_opcional_final"] = None
     guardar_datos(datos)
 
     await update.message.reply_text("Reiniciado. El próximo mensaje será nuevo.")
