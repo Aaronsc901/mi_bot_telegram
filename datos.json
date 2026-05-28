@@ -11,12 +11,12 @@
     "49"
   ],
   "jugada_opcional": [
-    "3",
-    "38",
-    "28"
+    "11",
+    "36",
+    "10"
   ],
-  "loteria_opcional": "Guacharo Activo",
-  "loteria_opcional_visible": "Guacharo Activo",
+  "loteria_opcional": "Lotto Activo",
+  "loteria_opcional_visible": "Lotto Activo - La Granjita",
   "margen_opcional_activado": null,
   "margen_opcional_inicio": null,
   "margen_opcional_final": null
