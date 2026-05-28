@@ -17,5 +17,7 @@
   ],
   "loteria_opcional": "Guacharo Activo",
   "loteria_opcional_visible": "Guacharo Activo",
-  "margen_opcional_activado": null
+  "margen_opcional_activado": null,
+  "margen_opcional_inicio": null,
+  "margen_opcional_final": null
 }
