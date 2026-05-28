@@ -109,7 +109,7 @@ def guardar_datos(datos):
     requests.put(GITHUB_API_URL, headers=headers, json=payload)
 
 # ---------------------------------------------------------
-# CÁLCULO DE MARGEN PRINCIPAL
+# CÁLCULO DE MARGEN PRINCIPAL (SE MANTIENE, PERO SIN BLOQUEO)
 # ---------------------------------------------------------
 
 def calcular_margen(hora_tope_str, intervalo):
@@ -135,30 +135,6 @@ def calcular_margen(hora_tope_str, intervalo):
     )
 
 # ---------------------------------------------------------
-# CORRECCIÓN AUTOMÁTICA DE MÁRGENES VIEJOS
-# ---------------------------------------------------------
-
-def margen_es_viejo(m_inicio, m_final, ahora):
-    try:
-        mi = datetime.strptime(m_inicio, "%I:%M %p").replace(
-            year=ahora.year, month=ahora.month, day=ahora.day, tzinfo=ZoneInfo("America/Caracas")
-        )
-        mf = datetime.strptime(m_final, "%I:%M %p").replace(
-            year=ahora.year, month=ahora.month, day=ahora.day, tzinfo=ZoneInfo("America/Caracas")
-        )
-
-        if (ahora - mf).total_seconds() > 300:
-            return True
-
-        if mf < mi:
-            return True
-
-        return False
-
-    except:
-        return True
-
-# ---------------------------------------------------------
 # COMANDO /start
 # ---------------------------------------------------------
 
@@ -177,7 +153,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 # ---------------------------------------------------------
-# CALLBACK PRINCIPAL
+# CALLBACK PRINCIPAL (SIN BLOQUEO DE HORARIO)
 # ---------------------------------------------------------
 
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -239,52 +215,11 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     margen_inicio, margen_final = calcular_margen(datos["hora_tope"], str(datos["intervalo"]))
 
-    # ---------------------------------------------------------
-    # CORRECCIÓN AUTOMÁTICA DE MÁRGENES VIEJOS (PRINCIPAL)
-    # ---------------------------------------------------------
-
-    if margen_es_viejo(margen_inicio, margen_final, ahora):
-        margen_inicio, margen_final = calcular_margen(datos["hora_tope"], str(datos["intervalo"]))
+    activar_por_tiempo = False  # YA NO SE USA
+    usar_opcional = repetidos  # SOLO SI HAY REPETIDOS
 
     # ---------------------------------------------------------
-    # BLOQUEO POR TIEMPO (CON MENSAJES CLAROS)
-    # ---------------------------------------------------------
-
-    def bloqueo_motivo(m_inicio, m_final):
-        mi = datetime.strptime(m_inicio, "%I:%M %p").replace(
-            year=ahora.year, month=ahora.month, day=ahora.day, tzinfo=ZoneInfo("America/Caracas")
-        )
-        mf = datetime.strptime(m_final, "%I:%M %p").replace(
-            year=ahora.year, month=ahora.month, day=ahora.day, tzinfo=ZoneInfo("America/Caracas")
-        )
-
-        if 0 <= (mi - ahora).total_seconds() <= 480:
-            return "faltan"
-
-        if (ahora - mf).total_seconds() > 300:
-            return "pasaron"
-
-        return None
-
-    motivo = bloqueo_motivo(margen_inicio, margen_final)
-    if motivo:
-        if motivo == "faltan":
-            await query.answer(
-                "⛔ No disponible.\nFaltan pocos minutos para el sorteo.",
-                show_alert=True
-            )
-        else:
-            await query.answer(
-                "⛔ El sorteo ya pasó.\nNo se permiten consultas fuera del horario válido.",
-                show_alert=True
-            )
-        return
-
-    activar_por_tiempo = (datetime.strptime(margen_final, "%I:%M %p") - ahora).total_seconds() <= 3600
-    usar_opcional = repetidos or activar_por_tiempo
-
-    # ---------------------------------------------------------
-    # JUGADA SECUNDARIA (CON MARGEN CONGELADO + CORRECCIÓN)
+    # JUGADA SECUNDARIA (SIN BLOQUEO DE HORARIO)
     # ---------------------------------------------------------
 
     if usar_opcional:
@@ -297,90 +232,25 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             jugada_opcional_norm = [normalizar_numero(j) for j in jugada_opcional]
             repetidos_opcional = validar_jugada(loteria_opcional_tecnica, jugada_opcional_norm)
 
-            if repetidos_opcional:
-                await query.answer(
-                    "❌ No hay nueva jugada disponible por el momento.",
-                    show_alert=True
-                )
-                return
+            if not repetidos_opcional:
+                jugada = [md_escape(j) for j in jugada_opcional_norm]
+                favorito_num = jugada_opcional_norm[0]
 
-            # SI YA EXISTE MARGEN CONGELADO → VALIDARLO
-            if datos.get("margen_opcional_inicio") and datos.get("margen_opcional_final"):
+                lt2 = loteria_opcional_tecnica.lower()
 
-                if margen_es_viejo(datos["margen_opcional_inicio"], datos["margen_opcional_final"], ahora):
-                    datos["margen_opcional_inicio"] = None
-                    datos["margen_opcional_final"] = None
-                    guardar_datos(datos)
+                if "lotto" in lt2 and "granjita" in lt2:
+                    diccionario_base2 = "Lotto Activo"
+                elif "lotto" in lt2:
+                    diccionario_base2 = "Lotto Activo"
+                elif "granjita" in lt2:
+                    diccionario_base2 = "La Granjita"
                 else:
-                    margen_inicio = datos["margen_opcional_inicio"]
-                    margen_final = datos["margen_opcional_final"]
+                    diccionario_base2 = loteria_opcional_tecnica
 
-            # SI NO EXISTE → CALCULAR Y CONGELAR
-            if datos.get("margen_opcional_inicio") is None:
+                favorito_nombre = DICCIONARIO.get(diccionario_base2, {}).get(favorito_num, "DESCONOCIDO")
+                favorito = md_escape(f"{favorito_num} ({favorito_nombre})")
 
-                intervalo_secundario = 30 if "ruleta" in loteria_opcional_tecnica.lower() else 60
-
-                if intervalo_secundario == 60:
-                    margen_inicio_dt = ahora.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
-                else:
-                    minuto = ahora.minute
-                    if minuto < 30:
-                        margen_inicio_dt = ahora.replace(minute=30, second=0, microsecond=0)
-                    else:
-                        siguiente_hora = ahora.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
-                        margen_inicio_dt = siguiente_hora.replace(minute=30)
-
-                margen_final_dt = margen_inicio_dt + timedelta(hours=4)
-
-                if intervalo_secundario == 60:
-                    limite = margen_inicio_dt.replace(hour=19, minute=0, second=0, microsecond=0)
-                else:
-                    limite = margen_inicio_dt.replace(hour=20, minute=30, second=0, microsecond=0)
-
-                if margen_final_dt > limite:
-                    margen_final_dt = limite
-
-                margen_inicio = margen_inicio_dt.strftime("%I:%M %p")
-                margen_final = margen_final_dt.strftime("%I:%M %p")
-
-                datos["margen_opcional_inicio"] = margen_inicio
-                datos["margen_opcional_final"] = margen_final
-                guardar_datos(datos)
-
-            # BLOQUEO TAMBIÉN PARA EL MARGEN SECUNDARIO
-            motivo = bloqueo_motivo(margen_inicio, margen_final)
-            if motivo:
-                if motivo == "faltan":
-                    await query.answer(
-                        "⛔ No disponible.\nFaltan pocos minutos para el sorteo.",
-                        show_alert=True
-                    )
-                else:
-                    await query.answer(
-                        "⛔ El sorteo ya pasó.\nNo se permiten consultas fuera del horario válido.",
-                        show_alert=True
-                    )
-                return
-
-            # CAMBIAR JUGADA
-            jugada = [md_escape(j) for j in jugada_opcional_norm]
-            favorito_num = jugada_opcional_norm[0]
-
-            lt2 = loteria_opcional_tecnica.lower()
-
-            if "lotto" in lt2 and "granjita" in lt2:
-                diccionario_base2 = "Lotto Activo"
-            elif "lotto" in lt2:
-                diccionario_base2 = "Lotto Activo"
-            elif "granjita" in lt2:
-                diccionario_base2 = "La Granjita"
-            else:
-                diccionario_base2 = loteria_opcional_tecnica
-
-            favorito_nombre = DICCIONARIO.get(diccionario_base2, {}).get(favorito_num, "DESCONOCIDO")
-            favorito = md_escape(f"{favorito_num} ({favorito_nombre})")
-
-            loteria_visible = loteria_opcional_visible
+                loteria_visible = loteria_opcional_visible
 
     # ---------------------------------------------------------
     # MENSAJE FINAL
@@ -388,10 +258,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     jugada_texto = " \\- ".join([f"*{j}*" for j in jugada])
 
-    if margen_final:
-        sorteo_texto = f"{margen_inicio} - {margen_final}"
-    else:
-        sorteo_texto = margen_inicio
+    sorteo_texto = f"{margen_inicio} - {margen_final}"
 
     mensaje = (
         "🔥 *ACTUALIZACIÓN DE JUGADA* 🔥\n"
