@@ -33,7 +33,7 @@ GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
 GITHUB_API_URL = "https://api.github.com/repos/Aaronsc901/mi_bot_telegram/contents/datos.json?ref=master"
 
-MODO_TEST = True
+MODO_TEST = False
 GRUPO_REAL_ID = -1002793980909
 GRUPO_TEST_ID = -5197810505
 
@@ -135,6 +135,32 @@ def calcular_margen(hora_tope_str, intervalo):
     )
 
 # ---------------------------------------------------------
+# CORRECCIÓN AUTOMÁTICA DE MÁRGENES VIEJOS
+# ---------------------------------------------------------
+
+def margen_es_viejo(m_inicio, m_final, ahora):
+    try:
+        mi = datetime.strptime(m_inicio, "%I:%M %p").replace(
+            year=ahora.year, month=ahora.month, day=ahora.day, tzinfo=ZoneInfo("America/Caracas")
+        )
+        mf = datetime.strptime(m_final, "%I:%M %p").replace(
+            year=ahora.year, month=ahora.month, day=ahora.day, tzinfo=ZoneInfo("America/Caracas")
+        )
+
+        # Si el margen final ya pasó hace más de 5 minutos → margen viejo
+        if (ahora - mf).total_seconds() > 300:
+            return True
+
+        # Si el margen final está antes del inicio → margen corrupto
+        if mf < mi:
+            return True
+
+        return False
+
+    except:
+        return True  # Si falla el parseo, lo tratamos como viejo
+
+# ---------------------------------------------------------
 # COMANDO /start
 # ---------------------------------------------------------
 
@@ -142,10 +168,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not grupo_permitido(update.effective_chat.id):
         return
 
+    msg = update.message or update.callback_query.message
+
     keyboard = [[InlineKeyboardButton("CONSULTAR JUGADA", callback_data="consulta")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    await update.message.reply_text(
+    await msg.reply_text(
         "Presiona el botón para ver la jugada actual:",
         reply_markup=reply_markup
     )
@@ -160,6 +188,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     user_id = query.from_user.id
     ahora_ts = datetime.now().timestamp()
+    ahora = datetime.now(ZoneInfo("America/Caracas"))
 
     # ANTI-SPAM POR USUARIO
     if user_id in ULTIMA_ACCION:
@@ -213,10 +242,15 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     margen_inicio, margen_final = calcular_margen(datos["hora_tope"], str(datos["intervalo"]))
 
     # ---------------------------------------------------------
-    # BLOQUEO POR TIEMPO (AMBOS MÁRGENES)
+    # CORRECCIÓN AUTOMÁTICA DE MÁRGENES VIEJOS (PRINCIPAL)
     # ---------------------------------------------------------
 
-    ahora = datetime.now(ZoneInfo("America/Caracas"))
+    if margen_es_viejo(margen_inicio, margen_final, ahora):
+        margen_inicio, margen_final = calcular_margen(datos["hora_tope"], str(datos["intervalo"]))
+
+    # ---------------------------------------------------------
+    # BLOQUEO POR TIEMPO (AMBOS MÁRGENES)
+    # ---------------------------------------------------------
 
     def bloquear_por_tiempo(m_inicio, m_final):
         mi = datetime.strptime(m_inicio, "%I:%M %p").replace(
@@ -245,7 +279,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     usar_opcional = repetidos or activar_por_tiempo
 
     # ---------------------------------------------------------
-    # JUGADA SECUNDARIA (CON MARGEN CONGELADO)
+    # JUGADA SECUNDARIA (CON MARGEN CONGELADO + CORRECCIÓN)
     # ---------------------------------------------------------
 
     if usar_opcional:
@@ -265,13 +299,20 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
                 return
 
-            # SI YA EXISTE MARGEN CONGELADO → USARLO
+            # SI YA EXISTE MARGEN CONGELADO → VALIDARLO
             if datos.get("margen_opcional_inicio") and datos.get("margen_opcional_final"):
-                margen_inicio = datos["margen_opcional_inicio"]
-                margen_final = datos["margen_opcional_final"]
 
-            else:
-                # CALCULAR NUEVO MARGEN (Y CONGELARLO)
+                if margen_es_viejo(datos["margen_opcional_inicio"], datos["margen_opcional_final"], ahora):
+                    datos["margen_opcional_inicio"] = None
+                    datos["margen_opcional_final"] = None
+                    guardar_datos(datos)
+                else:
+                    margen_inicio = datos["margen_opcional_inicio"]
+                    margen_final = datos["margen_opcional_final"]
+
+            # SI NO EXISTE → CALCULAR Y CONGELAR
+            if datos.get("margen_opcional_inicio") is None:
+
                 intervalo_secundario = 30 if "ruleta" in loteria_opcional_tecnica.lower() else 60
 
                 if intervalo_secundario == 60:
@@ -297,7 +338,6 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 margen_inicio = margen_inicio_dt.strftime("%I:%M %p")
                 margen_final = margen_final_dt.strftime("%I:%M %p")
 
-                # GUARDAR MARGEN CONGELADO
                 datos["margen_opcional_inicio"] = margen_inicio
                 datos["margen_opcional_final"] = margen_final
                 guardar_datos(datos)
