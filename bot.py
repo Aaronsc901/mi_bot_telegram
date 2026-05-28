@@ -226,7 +226,8 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # ---------------------------------------------------------
     proximo_sorteo = obtener_proximo_sorteo(loteria_tecnica, datos)
     datos["proximo_sorteo"] = proximo_sorteo
-    guardar_datos(datos)
+    if "_sha" in datos:
+        guardar_datos(datos)
 
     # ---------------------------------------------------------
     # (TODO LO DEMÁS QUEDA IGUAL — NO SE MODIFICÓ NADA)
