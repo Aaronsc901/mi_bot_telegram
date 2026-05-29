@@ -33,7 +33,7 @@ GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
 GITHUB_API_URL = "https://api.github.com/repos/Aaronsc901/mi_bot_telegram/contents/datos.json?ref=master"
 
-MODO_TEST = True
+MODO_TEST = False
 GRUPO_REAL_ID = -1002793980909
 GRUPO_TEST_ID = -5197810505
 
@@ -70,14 +70,14 @@ def normalizar_numero(n):
     n = str(n)
 
     if n == "0":
-        return "0"      # DELFIN
+        return "0"
     if n == "00":
-        return "00"     # BALLENA
+        return "00"
 
-    return n.zfill(2)   # resto de números
+    return n.zfill(2)
 
 # ---------------------------------------------------------
-# OBTENER PRÓXIMO SORTEO REAL SEGÚN HORARIOS
+# OBTENER PRÓXIMO SORTEO REAL (solo para bloqueo interno)
 # ---------------------------------------------------------
 
 def obtener_proximo_sorteo_real(loteria, horarios):
@@ -98,13 +98,46 @@ def obtener_proximo_sorteo_real(loteria, horarios):
     if proximos:
         return proximos[0]
 
-    # Si no quedan sorteos hoy → tomar el primero del día siguiente
+    # Si no quedan sorteos hoy → primer horario del día siguiente
     primero = datetime.strptime(lista[0], "%H:%M").replace(
         year=hoy.year, month=hoy.month, day=hoy.day,
         tzinfo=ZoneInfo("America/Caracas")
     ) + timedelta(days=1)
 
     return primero
+
+# ---------------------------------------------------------
+# RANGO VISUAL (solo para mostrar al usuario)
+# ---------------------------------------------------------
+
+def obtener_rango_visual(loteria, horarios, hora_tope_str):
+    ahora = datetime.now(ZoneInfo("America/Caracas"))
+    hoy = ahora.date()
+
+    lista = horarios.get(loteria, [])
+
+    hora_tope = datetime.strptime(hora_tope_str, "%H:%M").replace(
+        year=hoy.year, month=hoy.month, day=hoy.day,
+        tzinfo=ZoneInfo("America/Caracas")
+    )
+
+    faltantes = []
+    for h in lista:
+        hora_dt = datetime.strptime(h, "%H:%M").replace(
+            year=hoy.year, month=hoy.month, day=hoy.day,
+            tzinfo=ZoneInfo("America/Caracas")
+        )
+        if ahora < hora_dt <= hora_tope:
+            faltantes.append(hora_dt)
+
+    # OPCIÓN C — Si no quedan horarios → mensaje especial
+    if not faltantes:
+        return None, None
+
+    if len(faltantes) == 1:
+        return faltantes[0], None
+
+    return faltantes[0], faltantes[-1]
 
 # ---------------------------------------------------------
 # LECTURA DEL JSON REMOTO
@@ -181,7 +214,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # ANTI DOBLE EJECUCIÓN
     if ahora_ts - ULTIMA_EJECUCION_GLOBAL < COOLDOWN_GLOBAL:
-        await query.answer("⚠️ Procesando… intenta nuevamente en un momento.", show_alert=False)
+        await query.answer("⚠️ Procesando… intenta nuevamente en un momento.")
         return
 
     ULTIMA_EJECUCION_GLOBAL = ahora_ts
@@ -194,7 +227,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     datos = obtener_datos()
 
     # ---------------------------------------------------------
-    # MARGEN REAL PARA JUGADA PRINCIPAL
+    # BLOQUEO INTERNO (≤ 5 minutos para el próximo sorteo real)
     # ---------------------------------------------------------
 
     ahora = datetime.now(ZoneInfo("America/Caracas"))
@@ -204,14 +237,10 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if 0 < faltan_principal <= 300:
         await query.answer(
-            f"⛔ El sorteo de las {proximo_principal.strftime('%I:%M %p')} ya está cerrado.\n"
-            "Vuelve a consultar cuando abra el siguiente.",
+            f"⛔ El sorteo de las {proximo_principal.strftime('%I:%M %p')} ya está cerrado.",
             show_alert=True
         )
         return
-
-    margen_inicio = ahora.strftime("%I:%M %p")
-    margen_final = proximo_principal.strftime("%I:%M %p")
 
     # ---------------------------------------------------------
     # DATOS PRINCIPALES
@@ -245,7 +274,23 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     usar_opcional = repetidos or activar_por_tiempo
 
     # ---------------------------------------------------------
-    # JUGADA SECUNDARIA (CON MÁRGENES REALES)
+    # RANGO VISUAL PRINCIPAL
+    # ---------------------------------------------------------
+
+    inicio_visual, fin_visual = obtener_rango_visual(
+        datos["loteria"], datos["horarios"], datos["hora_tope"]
+    )
+
+    if inicio_visual is None:
+        sorteo_texto = "⚠️ No quedan sorteos disponibles hoy."
+    else:
+        if fin_visual:
+            sorteo_texto = f"{inicio_visual.strftime('%I:%M %p')} - {fin_visual.strftime('%I:%M %p')}"
+        else:
+            sorteo_texto = inicio_visual.strftime("%I:%M %p")
+
+    # ---------------------------------------------------------
+    # JUGADA SECUNDARIA (OPCIONAL)
     # ---------------------------------------------------------
 
     if usar_opcional:
@@ -261,12 +306,12 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             if repetidos_opcional:
                 await query.answer(
-                    "❌ No hay nueva jugada disponible por el momento que podamos ofrecerte.",
+                    "❌ No hay nueva jugada disponible por el momento.",
                     show_alert=True
                 )
                 return
 
-            # --- MARGEN REAL PARA JUGADA OPCIONAL ---
+            # BLOQUEO INTERNO OPCIONAL
             proximo_opcional = obtener_proximo_sorteo_real(loteria_opcional_tecnica, datos["horarios"])
             faltan_opcional = (proximo_opcional - ahora).total_seconds()
 
@@ -278,8 +323,18 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
                 return
 
-            margen_inicio = ahora.strftime("%I:%M %p")
-            margen_final = proximo_opcional.strftime("%I:%M %p")
+            # RANGO VISUAL OPCIONAL
+            inicio_visual, fin_visual = obtener_rango_visual(
+                loteria_opcional_tecnica, datos["horarios"], datos["hora_tope"]
+            )
+
+            if inicio_visual is None:
+                sorteo_texto = "⚠️ No quedan sorteos disponibles hoy."
+            else:
+                if fin_visual:
+                    sorteo_texto = f"{inicio_visual.strftime('%I:%M %p')} - {fin_visual.strftime('%I:%M %p')}"
+                else:
+                    sorteo_texto = inicio_visual.strftime("%I:%M %p")
 
             # CAMBIAR JUGADA
             jugada = [md_escape(j) for j in jugada_opcional_norm]
@@ -311,7 +366,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🔥 *ACTUALIZACIÓN DE JUGADA* 🔥\n"
         f"📅 *Última actualización:* `{ahora.strftime('%I:%M %p')}`\n\n"
         f"🎯 *Lotería:* *{md_escape(loteria_visible)}*\n"
-        f"🕒 *Sorteo:* `{margen_inicio} - {margen_final}`\n"
+        f"🕒 *Sorteo:* `{sorteo_texto}`\n"
         f"🐾 *Favorito:* *{favorito}*\n\n"
         "🔢 *Jugada del momento:*\n"
         f"{jugada_texto}"
