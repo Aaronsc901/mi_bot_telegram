@@ -47,7 +47,7 @@ MENSAJE_FIJO_ID = None
 # ---------------------------------------------------------
 
 ULTIMA_ACCION = {}
-COOLDOWN = 60  # 60 segundos por usuario
+COOLDOWN = 10
 
 ULTIMA_EJECUCION_GLOBAL = 0
 COOLDOWN_GLOBAL = 3
@@ -62,76 +62,19 @@ def md_escape(text: str) -> str:
         text = text.replace(c, f"\\{c}")
     return text
 
+# ---------------------------------------------------------
+# NORMALIZACIÓN ESPECIAL PARA 0 Y 00
+# ---------------------------------------------------------
+
 def normalizar_numero(n):
     n = str(n)
+
     if n == "0":
-        return "0"
+        return "0"      # DELFIN
     if n == "00":
-        return "00"
-    return n.zfill(2)
+        return "00"     # BALLENA
 
-# ---------------------------------------------------------
-# OBTENER PRÓXIMO SORTEO
-# ---------------------------------------------------------
-
-def obtener_proximo_sorteo(loteria, datos):
-    horarios_json = datos.get("horarios", {})
-    if not horarios_json:
-        return None
-
-    lot = loteria.strip().lower()
-
-    # Buscar coincidencia exacta o parcial
-    for key in horarios_json.keys():
-        if key.lower() == lot or lot in key.lower():
-            lista_horas = horarios_json[key]
-            break
-    else:
-        return None
-
-    tz = ZoneInfo("America/Caracas")
-    ahora = datetime.now(tz)
-
-    for h in lista_horas:
-        try:
-            hora_sorteo = datetime.strptime(h, "%H:%M").time()
-        except:
-            continue
-
-        dt_sorteo = datetime.combine(ahora.date(), hora_sorteo, tzinfo=tz)
-
-        # Si ya pasó, el sorteo es mañana
-        if dt_sorteo < ahora:
-            dt_sorteo += timedelta(days=1)
-
-        if dt_sorteo > ahora:
-            return h
-
-    return lista_horas[0]
-
-# ---------------------------------------------------------
-# BLOQUEO SI FALTAN MENOS DE 5 MINUTOS
-# ---------------------------------------------------------
-
-def faltan_menos_de_5(proximo_sorteo):
-    if not proximo_sorteo:
-        return False
-
-    tz = ZoneInfo("America/Caracas")
-    ahora = datetime.now(tz)
-
-    try:
-        hora_sorteo = datetime.strptime(proximo_sorteo, "%H:%M").time()
-    except:
-        return False
-
-    dt_sorteo = datetime.combine(ahora.date(), hora_sorteo, tzinfo=tz)
-
-    if dt_sorteo < ahora:
-        dt_sorteo += timedelta(days=1)
-
-    diferencia = dt_sorteo - ahora
-    return diferencia.total_seconds() <= 300  # 5 minutos
+    return n.zfill(2)   # resto de números
 
 # ---------------------------------------------------------
 # LECTURA DEL JSON REMOTO
@@ -205,12 +148,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not grupo_permitido(update.effective_chat.id):
         return
 
-    msg = update.message or update.callback_query.message
-
     keyboard = [[InlineKeyboardButton("CONSULTAR JUGADA", callback_data="consulta")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    await msg.reply_text(
+    await update.message.reply_text(
         "Presiona el botón para ver la jugada actual:",
         reply_markup=reply_markup
     )
@@ -225,19 +166,16 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     user_id = query.from_user.id
     ahora_ts = datetime.now().timestamp()
-    ahora = datetime.now(ZoneInfo("America/Caracas"))
 
-    # ANTI-SPAM POR USUARIO
+    # ANTI-SPAM
     if user_id in ULTIMA_ACCION:
-        diferencia = ahora_ts - ULTIMA_ACCION[user_id]
-        if diferencia < COOLDOWN:
-            faltan = int(COOLDOWN - diferencia)
-            await query.answer(f"⏳ Debes esperar {faltan} segundos para volver a consultar.", show_alert=True)
+        if ahora_ts - ULTIMA_ACCION[user_id] < COOLDOWN:
+            await query.answer("⏳ Espera unos segundos antes de consultar de nuevo.", show_alert=True)
             return
 
     ULTIMA_ACCION[user_id] = ahora_ts
 
-    # ANTI DOBLE EJECUCIÓN GLOBAL
+    # ANTI DOBLE EJECUCIÓN
     if ahora_ts - ULTIMA_EJECUCION_GLOBAL < COOLDOWN_GLOBAL:
         await query.answer("⚠️ Procesando… intenta nuevamente en un momento.", show_alert=False)
         return
@@ -251,34 +189,18 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     datos = obtener_datos()
 
-    # ---------------------------------------------------------
-    # CALCULAR PRÓXIMO SORTEO
-    # ---------------------------------------------------------
-    proximo_sorteo = obtener_proximo_sorteo(datos["loteria"], datos)
-    datos["proximo_sorteo"] = proximo_sorteo
-
-    # ---------------------------------------------------------
-    # BLOQUEO POR TIEMPO (MENOS DE 5 MINUTOS)
-    # ---------------------------------------------------------
-    if faltan_menos_de_5(proximo_sorteo):
-        await query.answer(
-            "⛔ Faltan menos de 5 minutos para el sorteo.\nEspera al próximo para actualizar.",
-            show_alert=True
-        )
-        return
-
-    # ---------------------------------------------------------
     # DATOS PRINCIPALES
-    # ---------------------------------------------------------
-
     loteria_tecnica = datos["loteria"]
     loteria_visible = datos.get("loteria_visible", datos["loteria"])
 
+    # NORMALIZAR NUMEROS
     jugada_numeros = [normalizar_numero(j) for j in datos["jugada"]]
     jugada = [md_escape(normalizar_numero(j)) for j in datos["jugada"]]
 
+    # FAVORITO
     favorito_num = jugada_numeros[0]
 
+    # SELECCIÓN DEL DICCIONARIO
     lt = loteria_tecnica.lower()
 
     if "lotto" in lt and "granjita" in lt:
@@ -293,14 +215,24 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     favorito_nombre = DICCIONARIO.get(diccionario_base, {}).get(favorito_num, "DESCONOCIDO")
     favorito = md_escape(f"{favorito_num} ({favorito_nombre})")
 
+    # VALIDACIÓN PRINCIPAL
     repetidos = validar_jugada(loteria_tecnica, jugada_numeros)
 
+    # MARGEN PRINCIPAL
     margen_inicio, margen_final = calcular_margen(datos["hora_tope"], str(datos["intervalo"]))
 
-    usar_opcional = repetidos
+    ahora = datetime.now(ZoneInfo("America/Caracas"))
+    margen_final_dt = datetime.strptime(margen_final, "%I:%M %p").replace(
+        year=ahora.year, month=ahora.month, day=ahora.day, tzinfo=ZoneInfo("America/Caracas")
+    )
+
+    falta = margen_final_dt - ahora
+    activar_por_tiempo = falta.total_seconds() <= 3600
+
+    usar_opcional = repetidos or activar_por_tiempo
 
     # ---------------------------------------------------------
-    # JUGADA SECUNDARIA (SOLO SI HAY REPETIDOS)
+    # JUGADA SECUNDARIA
     # ---------------------------------------------------------
 
     if usar_opcional:
@@ -311,27 +243,63 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if jugada_opcional and loteria_opcional_tecnica:
 
             jugada_opcional_norm = [normalizar_numero(j) for j in jugada_opcional]
+
             repetidos_opcional = validar_jugada(loteria_opcional_tecnica, jugada_opcional_norm)
 
-            if not repetidos_opcional:
-                jugada = [md_escape(j) for j in jugada_opcional_norm]
-                favorito_num = jugada_opcional_norm[0]
+            if repetidos_opcional:
+                await query.answer(
+                    "❌ No hay nueva jugada disponible por el momento que podamos ofrecerte.",
+                    show_alert=True
+                )
+                return
 
-                lt2 = loteria_opcional_tecnica.lower()
+            intervalo_secundario = 30 if "ruleta" in loteria_opcional_tecnica.lower() else 60
 
-                if "lotto" in lt2 and "granjita" in lt2:
-                    diccionario_base2 = "Lotto Activo"
-                elif "lotto" in lt2:
-                    diccionario_base2 = "Lotto Activo"
-                elif "granjita" in lt2:
-                    diccionario_base2 = "La Granjita"
+            if intervalo_secundario == 60:
+                margen_inicio_dt = ahora.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+            else:
+                minuto = ahora.minute
+                if minuto < 30:
+                    margen_inicio_dt = ahora.replace(minute=30, second=0, microsecond=0)
                 else:
-                    diccionario_base2 = loteria_opcional_tecnica
+                    siguiente_hora = ahora.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+                    margen_inicio_dt = siguiente_hora.replace(minute=30)
 
-                favorito_nombre = DICCIONARIO.get(diccionario_base2, {}).get(favorito_num, "DESCONOCIDO")
-                favorito = md_escape(f"{favorito_num} ({favorito_nombre})")
+            margen_final_dt = margen_inicio_dt + timedelta(hours=4)
 
-                loteria_visible = loteria_opcional_visible
+            if intervalo_secundario == 60:
+                limite = margen_inicio_dt.replace(hour=19, minute=0, second=0, microsecond=0)
+            else:
+                limite = margen_inicio_dt.replace(hour=20, minute=30, second=0, microsecond=0)
+
+            if margen_final_dt > limite:
+                margen_final_dt = limite
+
+            margen_inicio = margen_inicio_dt.strftime("%I:%M %p")
+            margen_final = margen_final_dt.strftime("%I:%M %p")
+
+            if margen_inicio == margen_final:
+                margen_final = ""
+
+            # CAMBIAR JUGADA
+            jugada = [md_escape(j) for j in jugada_opcional_norm]
+            favorito_num = jugada_opcional_norm[0]
+
+            lt2 = loteria_opcional_tecnica.lower()
+
+            if "lotto" in lt2 and "granjita" in lt2:
+                diccionario_base2 = "Lotto Activo"
+            elif "lotto" in lt2:
+                diccionario_base2 = "Lotto Activo"
+            elif "granjita" in lt2:
+                diccionario_base2 = "La Granjita"
+            else:
+                diccionario_base2 = loteria_opcional_tecnica
+
+            favorito_nombre = DICCIONARIO.get(diccionario_base2, {}).get(favorito_num, "DESCONOCIDO")
+            favorito = md_escape(f"{favorito_num} ({favorito_nombre})")
+
+            loteria_visible = loteria_opcional_visible
 
     # ---------------------------------------------------------
     # MENSAJE FINAL
@@ -339,7 +307,10 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     jugada_texto = " \\- ".join([f"*{j}*" for j in jugada])
 
-    sorteo_texto = f"{margen_inicio} - {margen_final}"
+    if margen_final:
+        sorteo_texto = f"{margen_inicio} - {margen_final}"
+    else:
+        sorteo_texto = margen_inicio
 
     mensaje = (
         "🔥 *ACTUALIZACIÓN DE JUGADA* 🔥\n"
@@ -385,8 +356,7 @@ async def reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
     MENSAJE_FIJO_ID = None
 
     datos = obtener_datos()
-    datos["margen_opcional_inicio"] = None
-    datos["margen_opcional_final"] = None
+    datos["margen_opcional_activado"] = None
     guardar_datos(datos)
 
     await update.message.reply_text("Reiniciado. El próximo mensaje será nuevo.")
