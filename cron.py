@@ -19,7 +19,7 @@ GITHUB_TOKEN = os.getenv("TOKENX")
 # Estados
 CHOOSING, LOTERIA, LISTA = range(3)
 
-# Loterías
+# Loterías vbn
 LOTERIAS_NORMALES = ["Guacharo activo", "Lotto activo", "La Granjita"]
 LOTERIA_ROYAL = "Ruleta Royal"
 LOTERIAS = LOTERIAS_NORMALES + [LOTERIA_ROYAL]
