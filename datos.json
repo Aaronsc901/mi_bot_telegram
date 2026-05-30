@@ -2,18 +2,18 @@
   "loteria": "Guacharo Activo",
   "loteria_visible": "Guacharo Activo",
   "validar_ambas": false,
-  "hora_tope": "13:00",
+  "hora_tope": "19:00",
   "proximo_sorteo": "08:00",
   "intervalo": "60",
   "jugada": [
-    "19",
-    "18",
-    "41"
+    "14",
+    "41",
+    "71"
   ],
   "jugada_opcional": [
-    "06",
-    "11",
-    "24"
+    "2",
+    "6",
+    "1"
   ],
   "horarios": {
     "Ruleta Royal": [
@@ -74,8 +74,8 @@
       "19:00"
     ]
   },
-  "loteria_opcional": "Lotto Activo",
-  "loteria_opcional_visible": "Lotto Activo - La Granjita",
+  "loteria_opcional": "Ruleta Royal",
+  "loteria_opcional_visible": "Ruleta Royal",
   "margen_opcional_activado": null,
   "margen_opcional_inicio": null,
   "margen_opcional_final": null
