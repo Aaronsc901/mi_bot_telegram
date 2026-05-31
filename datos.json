@@ -2,13 +2,13 @@
   "loteria": "Guacharo Activo",
   "loteria_visible": "Guacharo Activo",
   "validar_ambas": false,
-  "hora_tope": "19:00",
+  "hora_tope": "11:00",
   "proximo_sorteo": "08:00",
   "intervalo": "60",
   "jugada": [
-    "14",
-    "41",
-    "71"
+    "60",
+    "06",
+    "67","66"
   ],
   "jugada_opcional": [
     "2",
