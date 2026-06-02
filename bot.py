@@ -275,6 +275,10 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     hora_tope_dt = datetime.strptime(datos["hora_tope"], "%H:%M").replace(
         year=ahora.year, month=ahora.month, day=ahora.day,
         tzinfo=ZoneInfo("America/Caracas")
+        print("AHORA:", ahora.strftime("%H:%M"))
+        print("HORA_TOPE:", hora_tope_dt.strftime("%H:%M"))
+        print("FALTAN SEGUNDOS:", faltan_para_tope)
+
     )
     faltan_para_tope = (hora_tope_dt - ahora).total_seconds()
 
