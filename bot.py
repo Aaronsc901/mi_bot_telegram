@@ -33,7 +33,7 @@ GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
 GITHUB_API_URL = "https://api.github.com/repos/Aaronsc901/mi_bot_telegram/contents/datos.json?ref=master"
 
-MODO_TEST = True
+MODO_TEST = False
 GRUPO_REAL_ID = -1002793980909
 GRUPO_TEST_ID = -5197810505
 
@@ -197,6 +197,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # CALLBACK PRINCIPAL
 # ---------------------------------------------------------
 
+
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global MENSAJE_FIJO_ID, ULTIMA_EJECUCION_GLOBAL
 
@@ -270,7 +271,14 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     repetidos = validar_jugada(loteria_tecnica, jugada_numeros)
 
-    activar_por_tiempo = faltan_principal <= 3600
+    # ✅ CORRECCIÓN: usar hora_tope como referencia
+    hora_tope_dt = datetime.strptime(datos["hora_tope"], "%H:%M").replace(
+        year=ahora.year, month=ahora.month, day=ahora.day,
+        tzinfo=ZoneInfo("America/Caracas")
+    )
+    faltan_para_tope = (hora_tope_dt - ahora).total_seconds()
+
+    activar_por_tiempo = faltan_para_tope <= 3600
     usar_opcional = repetidos or activar_por_tiempo
 
     # ---------------------------------------------------------
@@ -393,6 +401,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
     MENSAJE_FIJO_ID = msg.message_id
+
 
 # ---------------------------------------------------------
 # COMANDOS /id y /reset
