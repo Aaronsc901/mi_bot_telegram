@@ -6,9 +6,9 @@
   "proximo_sorteo": "08:00",
   "intervalo": "60",
   "jugada": [
-    "35",
     "36",
-    "34"
+    "35",
+    "34",
   ],
   "jugada_opcional": [
     "18",
