@@ -1,14 +1,14 @@
 {
-  "loteria": "Ruleta Royal",
-  "loteria_visible": "Ruleta Royal",
-  "validar_ambas": false,
-  "hora_tope": "15:30",
+  "loteria": "Lotto activo",
+  "loteria_visible": "Lotto activo - La Granjita",
+  "validar_ambas": true,
+  "hora_tope": "18:00",
   "proximo_sorteo": "08:00",
-  "intervalo": "30",
+  "intervalo": "60",
   "jugada": [
-    "01",
-    "36",
-    "21"
+    "02",
+    "10",
+    "0"
   ],
   "jugada_opcional": [
     "12",
