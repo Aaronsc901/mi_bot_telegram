@@ -1,7 +1,7 @@
 {
   "loteria": "Guacharo Activo",
   "loteria_visible": "Guacharo Activo",
-  "validar_ambas": true,
+  "validar_ambas": false,
   "hora_tope": "16:00",
   "proximo_sorteo": "08:00",
   "intervalo": "60",
