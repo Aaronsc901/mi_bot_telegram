@@ -1,14 +1,14 @@
 {
-  "loteria": "Guacharo Activo",
-  "loteria_visible": "Guacharo Activo",
-  "validar_ambas": false,
-  "hora_tope": "12:00",
+  "loteria": "Lotto Activo",
+  "loteria_visible": "Lotto Activo - La Granjita",
+  "validar_ambas": true,
+  "hora_tope": "14:00",
   "proximo_sorteo": "08:00",
   "intervalo": "60",
   "jugada": [
-    "17",
-    "37",
-    "53","43"
+    "15",
+    "13",
+    "16"
   ],
   "jugada_opcional": [
     "20",
