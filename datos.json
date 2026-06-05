@@ -2,17 +2,17 @@
   "loteria": "Guacharo Activo",
   "loteria_visible": "Guacharo Activo",
   "validar_ambas": false,
-  "hora_tope": "19:00",
+  "hora_tope": "12:00",
   "proximo_sorteo": "08:00",
   "intervalo": "60",
   "jugada": [
-    "23",
-    "63",
-    "33","13"
+    "13",
+    "14",
+    "12"
   ],
   "jugada_opcional": [
-    "36",
-    "05","08"
+    "66",
+    "63","64","67"
   ],
   "horarios": {
     "Ruleta Royal": [
@@ -73,8 +73,8 @@
       "19:00"
     ]
   },
-  "loteria_opcional": "Ruleta Royal",
-  "loteria_opcional_visible": "Ruleta Royal",
+  "loteria_opcional": "Guacharo Activo",
+  "loteria_opcional_visible": "Guacharo Activo",
   "margen_opcional_activado": null,
   "margen_opcional_inicio": null,
   "margen_opcional_final": null
