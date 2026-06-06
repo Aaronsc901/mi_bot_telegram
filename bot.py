@@ -33,12 +33,19 @@ GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
 GITHUB_API_URL = "https://api.github.com/repos/Aaronsc901/mi_bot_telegram/contents/datos.json?ref=master"
 
-MODO_TEST = True
 GRUPO_REAL_ID = -1002793980909
 GRUPO_TEST_ID = -5197810505
 
+def obtener_modo_test():
+    try:
+        datos = obtener_datos()
+        return datos.get("modo_test", False)
+    except:
+        return False  # fallback seguro
+
 def grupo_permitido(chat_id):
-    return chat_id == (GRUPO_TEST_ID if MODO_TEST else GRUPO_REAL_ID)
+    modo_test = obtener_modo_test()
+    return chat_id == (GRUPO_TEST_ID if modo_test else GRUPO_REAL_ID)
 
 MENSAJE_FIJO_ID = None
 
