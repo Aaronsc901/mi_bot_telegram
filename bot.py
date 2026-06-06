@@ -47,7 +47,7 @@ MENSAJE_FIJO_ID = None
 # ---------------------------------------------------------
 
 ULTIMA_ACCION = {}
-COOLDOWN = 10
+COOLDOWN = 30
 
 ULTIMA_EJECUCION_GLOBAL = 0
 COOLDOWN_GLOBAL = 3
