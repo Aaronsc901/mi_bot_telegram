@@ -36,16 +36,20 @@ GITHUB_API_URL = "https://api.github.com/repos/Aaronsc901/mi_bot_telegram/conten
 GRUPO_REAL_ID = -1002793980909
 GRUPO_TEST_ID = -5197810505
 
-def obtener_modo_test():
+# Se carga una sola vez al iniciar el bot
+MODO_TEST = None
+
+def cargar_modo_test():
+    global MODO_TEST
     try:
         datos = obtener_datos()
-        return datos.get("modo_test", False)
+        MODO_TEST = datos.get("modo_test", False)
     except:
-        return False  # fallback seguro
+        MODO_TEST = False
 
 def grupo_permitido(chat_id):
-    modo_test = obtener_modo_test()
-    return chat_id == (GRUPO_TEST_ID if modo_test else GRUPO_REAL_ID)
+    return chat_id == (GRUPO_TEST_ID if MODO_TEST else GRUPO_REAL_ID)
+
 
 MENSAJE_FIJO_ID = None
 
@@ -438,7 +442,7 @@ def main():
     app.add_handler(CommandHandler("id", get_id))
     app.add_handler(CommandHandler("reset", reset))
     app.add_handler(CallbackQueryHandler(handle_callback))
-
+    cargar_modo_test()
     app.run_polling()
 
 if __name__ == "__main__":
