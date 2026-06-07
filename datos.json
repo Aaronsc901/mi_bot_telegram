@@ -8,11 +8,13 @@
   "intervalo": "60",
   "jugada": [
     "03",
-    "33","15"
+    "33",
+    "15"
   ],
   "jugada_opcional": [
     "63",
-    "15","12"
+    "15",
+    "12"
   ],
   "horarios": {
     "Ruleta Royal": [
