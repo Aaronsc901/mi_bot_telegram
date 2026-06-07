@@ -1,5 +1,5 @@
 {
-  "modo_test": true,
+  "modo_test": false,
   "loteria": "Guacharo Activo",
   "loteria_visible": "Guacharo Activo",
   "validar_ambas": false,
