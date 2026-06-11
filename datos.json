@@ -1,7 +1,7 @@
 {
   "modo_test": false,
   "loteria": "Lotto Activo",
-  "loteria_visible": "La Granjita",
+  "loteria_visible": "Lotto Activo - La Granjita",
   "validar_ambas": true,
   "hora_tope": "13:00",
   "proximo_sorteo": "08:00",
