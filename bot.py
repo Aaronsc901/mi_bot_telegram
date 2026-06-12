@@ -36,7 +36,6 @@ GITHUB_API_URL = "https://api.github.com/repos/Aaronsc901/mi_bot_telegram/conten
 GRUPO_REAL_ID = -1002793980909
 GRUPO_TEST_ID = -5197810505
 
-# Se carga una sola vez al iniciar el bot
 MODO_TEST = None
 
 def cargar_modo_test():
@@ -49,7 +48,6 @@ def cargar_modo_test():
 
 def grupo_permitido(chat_id):
     return chat_id == (GRUPO_TEST_ID if MODO_TEST else GRUPO_REAL_ID)
-
 
 MENSAJE_FIJO_ID = None
 
@@ -73,22 +71,50 @@ def md_escape(text: str) -> str:
         text = text.replace(c, f"\\{c}")
     return text
 
-# ---------------------------------------------------------
-# NORMALIZACIÓN ESPECIAL PARA 0 Y 00
-# ---------------------------------------------------------
-
 def normalizar_numero(n):
     n = str(n)
-
     if n == "0":
         return "0"
     if n == "00":
         return "00"
-
     return n.zfill(2)
 
 # ---------------------------------------------------------
-# OBTENER PRÓXIMO SORTEO REAL (solo para bloqueo interno)
+# MARGEN OPCIONAL
+# ---------------------------------------------------------
+
+def activar_margen_opcional(datos):
+    ahora = datetime.now(ZoneInfo("America/Caracas"))
+    inicio = ahora
+    fin = ahora + timedelta(hours=5)
+
+    datos["margen_opcional_inicio"] = inicio.isoformat()
+    datos["margen_opcional_final"] = fin.isoformat()
+
+    guardar_datos(datos)
+    return inicio, fin
+
+def margen_opcional_activo(datos):
+    inicio = datos.get("margen_opcional_inicio")
+    fin = datos.get("margen_opcional_final")
+
+    if not inicio or not fin:
+        return False, None, None
+
+    inicio_dt = datetime.fromisoformat(inicio)
+    fin_dt = datetime.fromisoformat(fin)
+    ahora = datetime.now(ZoneInfo("America/Caracas"))
+
+    if ahora > fin_dt:
+        datos["margen_opcional_inicio"] = None
+        datos["margen_opcional_final"] = None
+        guardar_datos(datos)
+        return False, None, None
+
+    return True, inicio_dt, fin_dt
+
+# ---------------------------------------------------------
+# OBTENER PRÓXIMO SORTEO REAL
 # ---------------------------------------------------------
 
 def obtener_proximo_sorteo_real(loteria, horarios):
@@ -109,7 +135,6 @@ def obtener_proximo_sorteo_real(loteria, horarios):
     if proximos:
         return proximos[0]
 
-    # Si no quedan sorteos hoy → primer horario del día siguiente
     primero = datetime.strptime(lista[0], "%H:%M").replace(
         year=hoy.year, month=hoy.month, day=hoy.day,
         tzinfo=ZoneInfo("America/Caracas")
@@ -118,7 +143,7 @@ def obtener_proximo_sorteo_real(loteria, horarios):
     return primero
 
 # ---------------------------------------------------------
-# RANGO VISUAL (solo para mostrar al usuario)
+# RANGO VISUAL
 # ---------------------------------------------------------
 
 def obtener_rango_visual(loteria, horarios, hora_tope_str):
@@ -141,7 +166,6 @@ def obtener_rango_visual(loteria, horarios, hora_tope_str):
         if ahora < hora_dt <= hora_tope:
             faltantes.append(hora_dt)
 
-    # OPCIÓN C — Si no quedan horarios → mensaje especial
     if not faltantes:
         return None, None
 
@@ -208,7 +232,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # CALLBACK PRINCIPAL
 # ---------------------------------------------------------
 
-
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global MENSAJE_FIJO_ID, ULTIMA_EJECUCION_GLOBAL
 
@@ -237,10 +260,6 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     datos = obtener_datos()
-
-    # ---------------------------------------------------------
-    # BLOQUEO INTERNO (≤ 5 minutos para el próximo sorteo real)
-    # ---------------------------------------------------------
 
     ahora = datetime.now(ZoneInfo("America/Caracas"))
     proximo_principal = obtener_proximo_sorteo_real(datos["loteria"], datos["horarios"])
@@ -282,15 +301,20 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     repetidos = validar_jugada(loteria_tecnica, jugada_numeros)
 
-    # ✅ CORRECCIÓN: usar hora_tope como referencia
-    hora_tope_dt = datetime.strptime(datos["hora_tope"], "%H:%M").replace(
-        year=ahora.year, month=ahora.month, day=ahora.day,
-        tzinfo=ZoneInfo("America/Caracas")
-    )
-    faltan_para_tope = (hora_tope_dt - ahora).total_seconds()
+    # ---------------------------------------------------------
+    # MARGEN OPCIONAL
+    # ---------------------------------------------------------
 
-    activar_por_tiempo = faltan_para_tope <= 600
-    usar_opcional = repetidos or activar_por_tiempo
+    margen_activo, margen_inicio_dt, margen_final_dt = margen_opcional_activo(datos)
+
+    usar_opcional = False
+
+    if margen_activo:
+        usar_opcional = True
+    else:
+        if repetidos:
+            margen_inicio_dt, margen_final_dt = activar_margen_opcional(datos)
+            usar_opcional = True
 
     # ---------------------------------------------------------
     # RANGO VISUAL PRINCIPAL
@@ -309,8 +333,10 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             sorteo_texto = inicio_visual.strftime("%I:%M %p")
 
     # ---------------------------------------------------------
-    # JUGADA SECUNDARIA (OPCIONAL)
+    # JUGADA SECUNDARIA
     # ---------------------------------------------------------
+
+    horas_faltantes_texto = ""
 
     if usar_opcional:
         jugada_opcional = datos.get("jugada_opcional", [])
@@ -330,7 +356,6 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
                 return
 
-            # BLOQUEO INTERNO OPCIONAL
             proximo_opcional = obtener_proximo_sorteo_real(loteria_opcional_tecnica, datos["horarios"])
             faltan_opcional = (proximo_opcional - ahora).total_seconds()
 
@@ -342,7 +367,6 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
                 return
 
-            # RANGO VISUAL OPCIONAL
             inicio_visual, fin_visual = obtener_rango_visual(
                 loteria_opcional_tecnica, datos["horarios"], datos["hora_tope"]
             )
@@ -355,7 +379,6 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 else:
                     sorteo_texto = inicio_visual.strftime("%I:%M %p")
 
-            # CAMBIAR JUGADA
             jugada = [md_escape(j) for j in jugada_opcional_norm]
             favorito_num = jugada_opcional_norm[0]
 
@@ -375,6 +398,17 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             loteria_visible = loteria_opcional_visible
 
+            # HORAS FALTANTES DEL MARGEN
+            if margen_activo:
+                faltan = margen_final_dt - ahora
+                horas = int(faltan.total_seconds() // 3600)
+                minutos = int((faltan.total_seconds() % 3600) // 60)
+
+                horas_faltantes_texto = (
+                    f"\n⏳ *Margen activo:* {margen_inicio_dt.strftime('%I:%M %p')} - {margen_final_dt.strftime('%I:%M %p')}"
+                    f"\n🕒 *Tiempo restante:* {horas}h {minutos}m\n"
+                )
+
     # ---------------------------------------------------------
     # MENSAJE FINAL
     # ---------------------------------------------------------
@@ -383,7 +417,8 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     mensaje = (
         "🔥 *ACTUALIZACIÓN DE JUGADA* 🔥\n"
-        f"📅 *Última actualización:* `{ahora.strftime('%I:%M %p')}`\n\n"
+        f"📅 *Última actualización:* `{ahora.strftime('%I:%M %p')}`\n"
+        f"{horas_faltantes_texto}\n"
         f"🎯 *Lotería:* *{md_escape(loteria_visible)}*\n"
         f"🕒 *Sorteo:* `{sorteo_texto}`\n"
         f"🐾 *Favorito:* *{favorito}*\n\n"
@@ -413,7 +448,6 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     MENSAJE_FIJO_ID = msg.message_id
 
-
 # ---------------------------------------------------------
 # COMANDOS /id y /reset
 # ---------------------------------------------------------
@@ -426,10 +460,11 @@ async def reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
     MENSAJE_FIJO_ID = None
 
     datos = obtener_datos()
-    datos["margen_opcional_activado"] = None
+    datos["margen_opcional_inicio"] = None
+    datos["margen_opcional_final"] = None
     guardar_datos(datos)
 
-    await update.message.reply_text("Reiniciado. El próximo mensaje será nuevo.")
+    await update.message.reply_text("Reiniciado. El margen opcional fue limpiado.")
 
 # ---------------------------------------------------------
 # MAIN
