@@ -14,7 +14,8 @@
   "jugada_opcional": [
     "65",
     "64",
-    "68","69"
+    "68",
+    "69"
   ],
   "horarios": {
     "Ruleta Royal": [
@@ -78,6 +79,6 @@
   "loteria_opcional": "Guacharo Activo",
   "loteria_opcional_visible": "Guacharo Activo",
   "margen_opcional_activado": null,
-  "margen_opcional_inicio": null,
-  "margen_opcional_final": null
+  "margen_opcional_inicio": "2026-06-12T18:19:17.079300-04:00",
+  "margen_opcional_final": "2026-06-12T23:19:17.079300-04:00"
 }
