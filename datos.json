@@ -1,5 +1,5 @@
 {
-  "modo_test": true,
+  "modo_test": false,
   "loteria": "Lotto Activo",
   "loteria_visible": "Lotto Activo - La Granjita",
   "validar_ambas": true,
