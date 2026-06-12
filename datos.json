@@ -1,5 +1,5 @@
 {
-  "modo_test": false,
+  "modo_test": true,
   "loteria": "Ruleta Royal",
   "loteria_visible": "Ruleta Royal",
   "validar_ambas": false,
