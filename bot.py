@@ -8,6 +8,22 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
 
 # ---------------------------------------------------------
+# CARGAR DICCIONARIO DE ANIMALITOS
+# ---------------------------------------------------------
+
+def cargar_diccionario():
+    url = "https://raw.githubusercontent.com/Aaronsc901/mi_bot_telegram/master/diccionario_animalitos.json"
+    try:
+        r = requests.get(url, timeout=5)
+        r.raise_for_status()
+        return json.loads(r.text)
+    except Exception as e:
+        print("ERROR cargando diccionario:", e)
+        return {}
+
+DICCIONARIO = cargar_diccionario()
+
+# ---------------------------------------------------------
 # CONFIGURACIÓN GENERAL
 # ---------------------------------------------------------
 
@@ -18,7 +34,6 @@ GITHUB_API_URL = "https://api.github.com/repos/Aaronsc901/mi_bot_telegram/conten
 
 GRUPO_REAL_ID = -1002793980909
 GRUPO_TEST_ID = -1004319978717
-
 
 MODO_TEST = None
 MENSAJE_FIJO_ID = None
@@ -85,6 +100,25 @@ def obtener_loteria_activa(datos, hora_actual=None):
     return None
 
 # ---------------------------------------------------------
+# OBTENER FAVORITO + NOMBRE
+# ---------------------------------------------------------
+
+def obtener_favorito(jugada):
+    if not jugada:
+        return None, None
+
+    favorito_num = jugada[0]
+    favorito_nombre = None
+
+    # Buscar en todos los diccionarios
+    for base in DICCIONARIO.values():
+        if favorito_num in base:
+            favorito_nombre = base[favorito_num]
+            break
+
+    return favorito_num, favorito_nombre
+
+# ---------------------------------------------------------
 # COMANDO /start
 # ---------------------------------------------------------
 
@@ -143,11 +177,22 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     jugada = [md_escape(j) for j in loteria["jugada"]]
     jugada_texto = " \\- ".join([f"*{j}*" for j in jugada]) if jugada else "*Sin jugada cargada*"
 
+    favorito_num, favorito_nombre = obtener_favorito(loteria["jugada"])
+
+    if favorito_num:
+        if favorito_nombre:
+            favorito_texto = f"*{md_escape(favorito_num)} ({md_escape(favorito_nombre)})*"
+        else:
+            favorito_texto = f"*{md_escape(favorito_num)}*"
+    else:
+        favorito_texto = "*N/A*"
+
     mensaje = (
         "🔥 *ACTUALIZACIÓN DE JUGADA* 🔥\n"
         f"📅 *Última actualización:* `{ahora.strftime('%I:%M %p')}`\n\n"
         f"🎯 *Lotería:* *{md_escape(loteria['visible'])}*\n"
-        f"🕒 *Sorteo:* `{loteria['rango_inicio']} - {loteria['rango_fin']}`\n\n"
+        f"🕒 *Sorteo:* `{loteria['rango_inicio']} - {loteria['rango_fin']}`\n"
+        f"🐾 *Favorito:* {favorito_texto}\n\n"
         "🔢 *Jugada del momento:*\n"
         f"{jugada_texto}"
     )
@@ -202,11 +247,22 @@ async def simular(update: Update, context: ContextTypes.DEFAULT_TYPE):
     jugada = [md_escape(j) for j in loteria["jugada"]]
     jugada_texto = " \\- ".join([f"*{j}*" for j in jugada]) if jugada else "*Sin jugada cargada*"
 
+    favorito_num, favorito_nombre = obtener_favorito(loteria["jugada"])
+
+    if favorito_num:
+        if favorito_nombre:
+            favorito_texto = f"*{md_escape(favorito_num)} ({md_escape(favorito_nombre)})*"
+        else:
+            favorito_texto = f"*{md_escape(favorito_num)}*"
+    else:
+        favorito_texto = "*N/A*"
+
     mensaje = (
         "🧪 *SIMULACIÓN DE JUGADA* 🧪\n"
         f"🕒 *Hora simulada:* `{context.args[0]}`\n\n"
         f"🎯 *Lotería:* *{md_escape(loteria['visible'])}*\n"
-        f"🕒 *Sorteo:* `{loteria['rango_inicio']} - {loteria['rango_fin']}`\n\n"
+        f"🕒 *Sorteo:* `{loteria['rango_inicio']} - {loteria['rango_fin']}`\n"
+        f"🐾 *Favorito:* {favorito_texto}\n\n"
         "🔢 *Jugada simulada:*\n"
         f"{jugada_texto}"
     )
