@@ -110,13 +110,19 @@ def obtener_favorito(jugada):
     favorito_num = jugada[0]
     favorito_nombre = None
 
-    # Buscar en todos los diccionarios
+    # 1. Prioridad: Lotto Activo (sirve también para Lotto Internacional)
+    if "Lotto Activo" in DICCIONARIO:
+        if favorito_num in DICCIONARIO["Lotto Activo"]:
+            return favorito_num, DICCIONARIO["Lotto Activo"][favorito_num]
+
+    # 2. Si no está en Lotto Activo, buscar en todos los diccionarios
     for base in DICCIONARIO.values():
         if favorito_num in base:
             favorito_nombre = base[favorito_num]
             break
 
     return favorito_num, favorito_nombre
+
 
 # ---------------------------------------------------------
 # COMANDO /start
