@@ -174,9 +174,10 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     datos = cargar_json_remoto()
     loteria = obtener_loteria_activa(datos)
 
-    if not loteria:
-        await query.answer("⚠️ No hay jugada disponible en este momento.", show_alert=True)
-        return
+     if not loteria:
+         await query.answer("📵 Actualmente no hay actualización disponible.", show_alert=True)
+         return
+   
 
     ahora = datetime.now(ZoneInfo("America/Caracas"))
 
