@@ -130,13 +130,15 @@ async def limpiar_mensajes(bot, datos):
     guardar_datos(datos)
 
 # ---------------------------------------------------------
-# PUBLICADOR AUTOMÁTICO
+# PUBLICADOR AUTOMÁTICO (POR RANGO)
 # ---------------------------------------------------------
 
 async def publicador_automatico(bot):
     datos = obtener_datos()
     ahora = datetime.now(ZoneInfo("America/Caracas"))
+
     hora_actual = ahora.strftime("%H:%M")
+    hora_actual_dt = datetime.strptime(hora_actual, "%H:%M")
 
     cambios = False
 
@@ -146,11 +148,18 @@ async def publicador_automatico(bot):
         jugadas = lot["jugadas"]
         publicadas = lot["publicadas"]
 
-        if hora_actual in horas and hora_actual not in publicadas:
-            msg_id = await publicar_jugada(bot, nombre, hora_actual, jugadas)
-            datos["mensajes_activos"].append(msg_id)
-            publicadas.append(hora_actual)
-            cambios = True
+        for h in horas:
+            if h in publicadas:
+                continue
+
+            hora_dt = datetime.strptime(h, "%H:%M")
+
+            # PUBLICA SI LA HORA YA PASÓ O ES IGUAL
+            if hora_dt <= hora_actual_dt:
+                msg_id = await publicar_jugada(bot, nombre, h, jugadas)
+                datos["mensajes_activos"].append(msg_id)
+                publicadas.append(h)
+                cambios = True
 
     if cambios:
         guardar_datos(datos)
