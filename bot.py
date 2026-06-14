@@ -123,7 +123,6 @@ def obtener_favorito(jugada):
 
     return favorito_num, favorito_nombre
 
-
 # ---------------------------------------------------------
 # COMANDO /start
 # ---------------------------------------------------------
@@ -174,10 +173,10 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     datos = cargar_json_remoto()
     loteria = obtener_loteria_activa(datos)
 
-     if not loteria:
-         await query.answer("📵 Actualmente no hay actualización disponible.", show_alert=True)
-         return
-   
+    # ⛔ NUEVA LÓGICA: si no hay ventana activa → mensaje push
+    if not loteria:
+        await query.answer("📵 Actualmente no hay actualización disponible.", show_alert=True)
+        return
 
     ahora = datetime.now(ZoneInfo("America/Caracas"))
 
@@ -189,7 +188,6 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if favorito_num:
         if favorito_nombre:
             favorito_texto = f"*{md_escape(favorito_num)} \\({md_escape(favorito_nombre)}\\)*"
-
         else:
             favorito_texto = f"*{md_escape(favorito_num)}*"
     else:
@@ -249,7 +247,7 @@ async def simular(update: Update, context: ContextTypes.DEFAULT_TYPE):
     loteria = obtener_loteria_activa(datos, hora_simulada)
 
     if not loteria:
-        await update.message.reply_text(f"⛔ A las {context.args[0]} no hay jugada disponible.")
+        await update.message.reply_text("📵 Actualmente no hay actualización disponible.")
         return
 
     jugada = [md_escape(j) for j in loteria["jugada"]]
@@ -259,7 +257,7 @@ async def simular(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if favorito_num:
         if favorito_nombre:
-            favorito_texto = f"*{md_escape(favorito_num)} ({md_escape(favorito_nombre)})*"
+            favorito_texto = f"*{md_escape(favorito_num)} \\({md_escape(favorito_nombre)}\\)*"
         else:
             favorito_texto = f"*{md_escape(favorito_num)}*"
     else:
