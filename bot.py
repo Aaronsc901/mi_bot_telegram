@@ -2,7 +2,7 @@ import os
 import json
 import base64
 import requests
-from datetime import datetime, time
+from datetime import datetime
 from zoneinfo import ZoneInfo
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
@@ -59,7 +59,6 @@ def cargar_modo_test():
         MODO_TEST = False
 
 def hora_en_rango(hora_actual, inicio_str, fin_str):
-    """Compara hora actual con un rango HH:MM."""
     h_inicio = datetime.strptime(inicio_str, "%H:%M").time()
     h_fin = datetime.strptime(fin_str, "%H:%M").time()
     return h_inicio <= hora_actual <= h_fin
@@ -68,12 +67,13 @@ def hora_en_rango(hora_actual, inicio_str, fin_str):
 # SELECCIÓN DE LOTERÍA SEGÚN VENTANAS
 # ---------------------------------------------------------
 
-def obtener_loteria_activa(datos):
-    ahora = datetime.now(ZoneInfo("America/Caracas")).time()
+def obtener_loteria_activa(datos, hora_actual=None):
+    if hora_actual is None:
+        hora_actual = datetime.now(ZoneInfo("America/Caracas")).time()
 
     for loteria in datos["loterias"]:
         for ventana in loteria["ventanas"]:
-            if hora_en_rango(ahora, ventana["activar_inicio"], ventana["activar_fin"]):
+            if hora_en_rango(hora_actual, ventana["activar_inicio"], ventana["activar_fin"]):
                 return {
                     "visible": loteria["visible"],
                     "rango_inicio": ventana["rango_inicio"],
@@ -174,6 +174,45 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     MENSAJE_FIJO_ID = msg.message_id
 
 # ---------------------------------------------------------
+# COMANDO /simular HH:MM
+# ---------------------------------------------------------
+
+async def simular(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not grupo_permitido(update.effective_chat.id):
+        return
+
+    if len(context.args) != 1:
+        await update.message.reply_text("Uso correcto:\n/simular HH:MM")
+        return
+
+    try:
+        hora_simulada = datetime.strptime(context.args[0], "%H:%M").time()
+    except:
+        await update.message.reply_text("Formato inválido. Usa HH:MM (ej: 14:25)")
+        return
+
+    datos = cargar_json_remoto()
+    loteria = obtener_loteria_activa(datos, hora_simulada)
+
+    if not loteria:
+        await update.message.reply_text(f"⛔ A las {context.args[0]} no hay jugada disponible.")
+        return
+
+    jugada = [md_escape(j) for j in loteria["jugada"]]
+    jugada_texto = " \\- ".join([f"*{j}*" for j in jugada]) if jugada else "*Sin jugada cargada*"
+
+    mensaje = (
+        "🧪 *SIMULACIÓN DE JUGADA* 🧪\n"
+        f"🕒 *Hora simulada:* `{context.args[0]}`\n\n"
+        f"🎯 *Lotería:* *{md_escape(loteria['visible'])}*\n"
+        f"🕒 *Sorteo:* `{loteria['rango_inicio']} - {loteria['rango_fin']}`\n\n"
+        "🔢 *Jugada simulada:*\n"
+        f"{jugada_texto}"
+    )
+
+    await update.message.reply_text(mensaje, parse_mode="MarkdownV2")
+
+# ---------------------------------------------------------
 # COMANDOS /id y /reset
 # ---------------------------------------------------------
 
@@ -195,6 +234,7 @@ def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("id", get_id))
     app.add_handler(CommandHandler("reset", reset))
+    app.add_handler(CommandHandler("simular", simular))
     app.add_handler(CallbackQueryHandler(handle_callback))
 
     cargar_modo_test()
