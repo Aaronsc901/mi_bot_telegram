@@ -84,16 +84,21 @@ def hora_en_rango(hora_actual, inicio_str, fin_str):
 # ---------------------------------------------------------
 
 def ajustar_rango_dinamico(rango_inicio_str, rango_fin_str, ahora):
+    # Convertir strings a objetos datetime.time
     r_inicio = datetime.strptime(rango_inicio_str, "%H:%M").time()
     r_fin = datetime.strptime(rango_fin_str, "%H:%M").time()
 
+    # Función interna para formatear a 12h
+    def formato_12h(t):
+        return datetime.strptime(t.strftime("%H:%M"), "%H:%M").strftime("%I:%M %p")
+
     # Antes del rango → mostrar completo
     if ahora.time() < r_inicio:
-        return f"{r_inicio.strftime('%H:%M')} - {r_fin.strftime('%H:%M')}"
+        return f"{formato_12h(r_inicio)} - {formato_12h(r_fin)}"
 
     # Después del rango → solo hora final
     if ahora.time() >= r_fin:
-        return f"{r_fin.strftime('%H:%M')}"
+        return f"{formato_12h(r_fin)}"
 
     # Dentro del rango → ajustar a la próxima hora entera
     siguiente_hora = (ahora.replace(minute=0, second=0, microsecond=0)
@@ -101,10 +106,13 @@ def ajustar_rango_dinamico(rango_inicio_str, rango_fin_str, ahora):
 
     inicio_dinamico = max(siguiente_hora.time(), r_inicio)
 
+    # Si el inicio dinámico coincide con el final → solo hora final
     if inicio_dinamico >= r_fin:
-        return f"{r_fin.strftime('%H:%M')}"
+        return f"{formato_12h(r_fin)}"
 
-    return f"{inicio_dinamico.strftime('%H:%M')} - {r_fin.strftime('%H:%M')}"
+    # Mostrar rango ajustado
+    return f"{formato_12h(inicio_dinamico)} - {formato_12h(r_fin)}"
+
 
 # ---------------------------------------------------------
 # BUSCAR JUGADA EN CURSO AUNQUE NO HAYA VENTANA ACTIVA
