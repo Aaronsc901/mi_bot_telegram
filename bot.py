@@ -2,7 +2,8 @@ import os
 import json
 import base64
 import requests
-from datetime import datetime, timedelta
+import asyncio
+from datetime import datetime
 from zoneinfo import ZoneInfo
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 from telegram import Update
@@ -81,7 +82,7 @@ def guardar_datos(datos):
 # PUBLICAR MENSAJE AUTOMÁTICO
 # ---------------------------------------------------------
 
-async def publicar_jugada(context: ContextTypes.DEFAULT_TYPE, loteria, hora, jugadas):
+async def publicar_jugada(bot, loteria, hora, jugadas):
     ahora = datetime.now(ZoneInfo("America/Caracas"))
 
     jugada_norm = [normalizar_numero(j) for j in jugadas]
@@ -98,7 +99,7 @@ async def publicar_jugada(context: ContextTypes.DEFAULT_TYPE, loteria, hora, jug
 
     chat_destino = GRUPO_TEST_ID if MODO_TEST else GRUPO_REAL_ID
 
-    msg = await context.bot.send_message(
+    msg = await bot.send_message(
         chat_destino,
         mensaje,
         parse_mode="MarkdownV2"
@@ -110,9 +111,8 @@ async def publicar_jugada(context: ContextTypes.DEFAULT_TYPE, loteria, hora, jug
 # LIMPIAR MENSAJES (MÁXIMO 3 ACTIVOS)
 # ---------------------------------------------------------
 
-async def limpiar_mensajes(context: ContextTypes.DEFAULT_TYPE, datos):
+async def limpiar_mensajes(bot, datos):
     chat_destino = GRUPO_TEST_ID if MODO_TEST else GRUPO_REAL_ID
-
     mensajes = datos.get("mensajes_activos", [])
 
     if len(mensajes) <= 3:
@@ -122,7 +122,7 @@ async def limpiar_mensajes(context: ContextTypes.DEFAULT_TYPE, datos):
 
     for msg_id in borrar:
         try:
-            await context.bot.delete_message(chat_id=chat_destino, message_id=msg_id)
+            await bot.delete_message(chat_id=chat_destino, message_id=msg_id)
         except:
             pass
 
@@ -133,7 +133,7 @@ async def limpiar_mensajes(context: ContextTypes.DEFAULT_TYPE, datos):
 # PUBLICADOR AUTOMÁTICO
 # ---------------------------------------------------------
 
-async def publicador_automatico(context: ContextTypes.DEFAULT_TYPE):
+async def publicador_automatico(bot):
     datos = obtener_datos()
     ahora = datetime.now(ZoneInfo("America/Caracas"))
     hora_actual = ahora.strftime("%H:%M")
@@ -147,15 +147,27 @@ async def publicador_automatico(context: ContextTypes.DEFAULT_TYPE):
         publicadas = lot["publicadas"]
 
         if hora_actual in horas and hora_actual not in publicadas:
-            msg_id = await publicar_jugada(context, nombre, hora_actual, jugadas)
-
+            msg_id = await publicar_jugada(bot, nombre, hora_actual, jugadas)
             datos["mensajes_activos"].append(msg_id)
             publicadas.append(hora_actual)
             cambios = True
 
     if cambios:
         guardar_datos(datos)
-        await limpiar_mensajes(context, datos)
+        await limpiar_mensajes(bot, datos)
+
+# ---------------------------------------------------------
+# CICLO AUTOMÁTICO SIN JOB_QUEUE
+# ---------------------------------------------------------
+
+async def ciclo_publicador(app):
+    await asyncio.sleep(5)
+    while True:
+        try:
+            await publicador_automatico(app.bot)
+        except Exception as e:
+            print("Error en publicador_automatico:", e)
+        await asyncio.sleep(60)
 
 # ---------------------------------------------------------
 # COMANDO /cargar_auto
@@ -182,7 +194,8 @@ def main():
 
     app.add_handler(CommandHandler("cargar_auto", cargar_auto))
 
-    app.job_queue.run_repeating(publicador_automatico, interval=60, first=5)
+    loop = asyncio.get_event_loop()
+    loop.create_task(ciclo_publicador(app))
 
     app.run_polling()
 
