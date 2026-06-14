@@ -3,18 +3,17 @@
   "loteria_visible": "Lotto Activo",
 
   "jugada": ["12", "34", "56"],
-
   "jugada_opcional": [],
   "loteria_opcional": null,
   "loteria_opcional_visible": null,
 
-  "hora_tope": "11:30",
+  "hora_tope": "23:59",
 
   "horarios": {
-    "Lotto Activo": ["08:30", "09:30", "10:30", "11:30"],
-    "La Granjita": ["08:00", "09:00", "10:00", "11:00"],
-    "Loteria3": ["08:30", "09:30", "10:30", "11:30"],
-    "Loteria4": ["08:00", "09:00", "10:00", "11:00"]
+    "Lotto Activo": ["22:27", "22:28", "22:29"],
+    "La Granjita": ["22:27", "22:28", "22:29"],
+    "Loteria3": ["22:27", "22:28", "22:29"],
+    "Loteria4": ["22:27", "22:28", "22:29"]
   },
 
   "modo_test": false,
@@ -25,25 +24,25 @@
   "auto_loterias": [
     {
       "nombre": "Lotto Activo",
-      "horas": ["08:30", "09:30", "10:30", "11:30"],
+      "horas": ["22:27", "22:28", "22:29"],
       "jugadas": ["12", "34", "56"],
       "publicadas": []
     },
     {
       "nombre": "La Granjita",
-      "horas": ["08:00", "09:00", "10:00", "11:00"],
+      "horas": ["22:27", "22:28", "22:29"],
       "jugadas": ["22", "33", "44"],
       "publicadas": []
     },
     {
       "nombre": "Loteria3",
-      "horas": ["08:30", "09:30", "10:30", "11:30"],
+      "horas": ["22:27", "22:28", "22:29"],
       "jugadas": ["55", "66", "77"],
       "publicadas": []
     },
     {
       "nombre": "Loteria4",
-      "horas": ["08:00", "09:00", "10:00", "11:00"],
+      "horas": ["22:27", "22:28", "22:29"],
       "jugadas": ["88", "99", "11"],
       "publicadas": []
     }
