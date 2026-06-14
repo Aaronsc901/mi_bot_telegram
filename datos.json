@@ -1,84 +1,53 @@
 {
-  "modo_test": false,
-  "loteria": "Guacharo Activo",
-  "loteria_visible": "Guacharo Activo",
-  "validar_ambas": false,
-  "hora_tope": "19:00",
-  "proximo_sorteo": "08:00",
-  "intervalo": "60",
-  "jugada": [
-    "48",
-    "49",
-    "44","45"
-  ],
-  "jugada_opcional": [
-    "48",
-    "49",
-    "44",
-    "45"
-  ],
+  "loteria": "Lotto Activo",
+  "loteria_visible": "Lotto Activo",
+
+  "jugada": ["12", "34", "56"],
+
+  "jugada_opcional": [],
+  "loteria_opcional": null,
+  "loteria_opcional_visible": null,
+
+  "hora_tope": "11:30",
+
   "horarios": {
-    "Ruleta Royal": [
-      "08:30",
-      "09:30",
-      "10:30",
-      "11:30",
-      "12:30",
-      "13:30",
-      "14:30",
-      "15:30",
-      "16:30",
-      "17:30",
-      "18:30",
-      "19:30",
-      "20:30"
-    ],
-    "Guacharo Activo": [
-      "08:00",
-      "09:00",
-      "10:00",
-      "11:00",
-      "12:00",
-      "13:00",
-      "14:00",
-      "15:00",
-      "16:00",
-      "17:00",
-      "18:00",
-      "19:00"
-    ],
-    "Lotto Activo": [
-      "08:00",
-      "09:00",
-      "10:00",
-      "11:00",
-      "12:00",
-      "13:00",
-      "14:00",
-      "15:00",
-      "16:00",
-      "17:00",
-      "18:00",
-      "19:00"
-    ],
-    "La Granjita": [
-      "08:00",
-      "09:00",
-      "10:00",
-      "11:00",
-      "12:00",
-      "13:00",
-      "14:00",
-      "15:00",
-      "16:00",
-      "17:00",
-      "18:00",
-      "19:00"
-    ]
+    "Lotto Activo": ["08:30", "09:30", "10:30", "11:30"],
+    "La Granjita": ["08:00", "09:00", "10:00", "11:00"],
+    "Loteria3": ["08:30", "09:30", "10:30", "11:30"],
+    "Loteria4": ["08:00", "09:00", "10:00", "11:00"]
   },
-  "loteria_opcional": "Guacharo Activo",
-  "loteria_opcional_visible": "Guacharo Activo",
-  "margen_opcional_activado": null,
+
+  "modo_test": false,
+
   "margen_opcional_inicio": null,
-  "margen_opcional_final": null
+  "margen_opcional_final": null,
+
+  "auto_loterias": [
+    {
+      "nombre": "Lotto Activo",
+      "horas": ["08:30", "09:30", "10:30", "11:30"],
+      "jugadas": ["12", "34", "56"],
+      "publicadas": []
+    },
+    {
+      "nombre": "La Granjita",
+      "horas": ["08:00", "09:00", "10:00", "11:00"],
+      "jugadas": ["22", "33", "44"],
+      "publicadas": []
+    },
+    {
+      "nombre": "Loteria3",
+      "horas": ["08:30", "09:30", "10:30", "11:30"],
+      "jugadas": ["55", "66", "77"],
+      "publicadas": []
+    },
+    {
+      "nombre": "Loteria4",
+      "horas": ["08:00", "09:00", "10:00", "11:00"],
+      "jugadas": ["88", "99", "11"],
+      "publicadas": []
+    }
+  ],
+
+  "mensajes_activos": []
 }
