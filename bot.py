@@ -187,7 +187,8 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if favorito_num:
         if favorito_nombre:
-            favorito_texto = f"*{md_escape(favorito_num)} ({md_escape(favorito_nombre)})*"
+            favorito_texto = f"*{md_escape(favorito_num)} \\({md_escape(favorito_nombre)}\\)*"
+
         else:
             favorito_texto = f"*{md_escape(favorito_num)}*"
     else:
