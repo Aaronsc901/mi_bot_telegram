@@ -80,6 +80,52 @@ def hora_en_rango(hora_actual, inicio_str, fin_str):
     return h_inicio <= hora_actual <= h_fin
 
 # ---------------------------------------------------------
+# AJUSTE DINÁMICO DEL RANGO (LÓGICA DEL BOT ANTERIOR)
+# ---------------------------------------------------------
+
+def ajustar_rango_dinamico(rango_inicio_str, rango_fin_str, ahora):
+    r_inicio = datetime.strptime(rango_inicio_str, "%H:%M").time()
+    r_fin = datetime.strptime(rango_fin_str, "%H:%M").time()
+
+    # Antes del rango → mostrar completo
+    if ahora.time() < r_inicio:
+        return f"{r_inicio.strftime('%H:%M')} - {r_fin.strftime('%H:%M')}"
+
+    # Después del rango → solo hora final
+    if ahora.time() >= r_fin:
+        return f"{r_fin.strftime('%H:%M')}"
+
+    # Dentro del rango → ajustar a la próxima hora entera
+    siguiente_hora = (ahora.replace(minute=0, second=0, microsecond=0)
+                      .replace(hour=ahora.hour + 1))
+
+    inicio_dinamico = max(siguiente_hora.time(), r_inicio)
+
+    if inicio_dinamico >= r_fin:
+        return f"{r_fin.strftime('%H:%M')}"
+
+    return f"{inicio_dinamico.strftime('%H:%M')} - {r_fin.strftime('%H:%M')}"
+
+# ---------------------------------------------------------
+# BUSCAR JUGADA EN CURSO AUNQUE NO HAYA VENTANA ACTIVA
+# ---------------------------------------------------------
+
+def buscar_jugada_en_curso(datos, ahora):
+    for loteria in datos["loterias"]:
+        for ventana in loteria["ventanas"]:
+            r_inicio = datetime.strptime(ventana["rango_inicio"], "%H:%M").time()
+            r_fin = datetime.strptime(ventana["rango_fin"], "%H:%M").time()
+
+            if r_inicio <= ahora.time() <= r_fin:
+                return {
+                    "visible": loteria["visible"],
+                    "rango_inicio": ventana["rango_inicio"],
+                    "rango_fin": ventana["rango_fin"],
+                    "jugada": ventana["jugada"]
+                }
+    return None
+
+# ---------------------------------------------------------
 # SELECCIÓN DE LOTERÍA SEGÚN VENTANAS
 # ---------------------------------------------------------
 
@@ -110,12 +156,10 @@ def obtener_favorito(jugada):
     favorito_num = jugada[0]
     favorito_nombre = None
 
-    # 1. Prioridad: Lotto Activo (sirve también para Lotto Internacional)
     if "Lotto Activo" in DICCIONARIO:
         if favorito_num in DICCIONARIO["Lotto Activo"]:
             return favorito_num, DICCIONARIO["Lotto Activo"][favorito_num]
 
-    # 2. Si no está en Lotto Activo, buscar en todos los diccionarios
     for base in DICCIONARIO.values():
         if favorito_num in base:
             favorito_nombre = base[favorito_num]
@@ -149,6 +193,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     user_id = query.from_user.id
     ahora_ts = datetime.now().timestamp()
+    ahora = datetime.now(ZoneInfo("America/Caracas"))
 
     # Anti‑spam
     if user_id in ULTIMA_ACCION:
@@ -173,13 +218,17 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     datos = cargar_json_remoto()
     loteria = obtener_loteria_activa(datos)
 
-    # ⛔ NUEVA LÓGICA: si no hay ventana activa → mensaje push
+    # NUEVA LÓGICA: si no hay ventana activa, buscar jugada en curso
     if not loteria:
-        await query.answer("📵 Actualmente no hay actualización disponible.", show_alert=True)
-        return
+        jugada_curso = buscar_jugada_en_curso(datos, ahora)
 
-    ahora = datetime.now(ZoneInfo("America/Caracas"))
+        if not jugada_curso:
+            await query.answer("📵 Actualmente no hay actualización disponible.", show_alert=True)
+            return
 
+        loteria = jugada_curso
+
+    # Preparar jugada
     jugada = [md_escape(j) for j in loteria["jugada"]]
     jugada_texto = " \\- ".join([f"*{j}*" for j in jugada]) if jugada else "*Sin jugada cargada*"
 
@@ -193,11 +242,18 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         favorito_texto = "*N/A*"
 
+    # Rango dinámico
+    rango_dinamico = ajustar_rango_dinamico(
+        loteria["rango_inicio"],
+        loteria["rango_fin"],
+        ahora
+    )
+
     mensaje = (
         "🔥 *ACTUALIZACIÓN DE JUGADA* 🔥\n"
         f"📅 *Última actualización:* `{ahora.strftime('%I:%M %p')}`\n\n"
         f"🎯 *Lotería:* *{md_escape(loteria['visible'])}*\n"
-        f"🕒 *Sorteo:* `{loteria['rango_inicio']} - {loteria['rango_fin']}`\n"
+        f"🕒 *Sorteo:* `{rango_dinamico}`\n"
         f"🐾 *Favorito:* {favorito_texto}\n\n"
         "🔢 *Jugada del momento:*\n"
         f"{jugada_texto}"
@@ -246,9 +302,19 @@ async def simular(update: Update, context: ContextTypes.DEFAULT_TYPE):
     datos = cargar_json_remoto()
     loteria = obtener_loteria_activa(datos, hora_simulada)
 
+    ahora = datetime.now(ZoneInfo("America/Caracas")).replace(
+        hour=hora_simulada.hour,
+        minute=hora_simulada.minute,
+        second=0,
+        microsecond=0
+    )
+
     if not loteria:
-        await update.message.reply_text("📵 Actualmente no hay actualización disponible.")
-        return
+        jugada_curso = buscar_jugada_en_curso(datos, ahora)
+        if not jugada_curso:
+            await update.message.reply_text("📵 Actualmente no hay actualización disponible.")
+            return
+        loteria = jugada_curso
 
     jugada = [md_escape(j) for j in loteria["jugada"]]
     jugada_texto = " \\- ".join([f"*{j}*" for j in jugada]) if jugada else "*Sin jugada cargada*"
@@ -263,11 +329,17 @@ async def simular(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         favorito_texto = "*N/A*"
 
+    rango_dinamico = ajustar_rango_dinamico(
+        loteria["rango_inicio"],
+        loteria["rango_fin"],
+        ahora
+    )
+
     mensaje = (
         "🧪 *SIMULACIÓN DE JUGADA* 🧪\n"
         f"🕒 *Hora simulada:* `{context.args[0]}`\n\n"
         f"🎯 *Lotería:* *{md_escape(loteria['visible'])}*\n"
-        f"🕒 *Sorteo:* `{loteria['rango_inicio']} - {loteria['rango_fin']}`\n"
+        f"🕒 *Sorteo:* `{rango_dinamico}`\n"
         f"🐾 *Favorito:* {favorito_texto}\n\n"
         "🔢 *Jugada simulada:*\n"
         f"{jugada_texto}"
