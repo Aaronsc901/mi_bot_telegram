@@ -74,14 +74,14 @@
 
     {
       "nombre": "Lotto Activo - La Granjita",
-      "visible": "Lotto Activo - Selva Plus",
+      "visible": "Lotto Activo - La Granjita",
       "ventanas": [
         {
           "activar_inicio": "09:30",
           "activar_fin": "10:00",
           "rango_inicio": "10:00",
           "rango_fin": "13:00",
-          "jugada": ["08", "11", "12", "32"]
+          "jugada": ["08", "11", "09"]
         },
         {
           "activar_inicio": "13:30",
