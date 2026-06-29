@@ -32,7 +32,7 @@
 
     {
       "nombre": "Lotto Internacional",
-      "visible": "Lotto Internacional",
+      "visible": "Guacharito",
       "ventanas": [
         {
           "activar_inicio": "08:00",
@@ -53,14 +53,14 @@
 
     {
       "nombre": "Ruleta Royal",
-      "visible": "Guacharito",
+      "visible": "Ruleta Royal",
       "ventanas": [
         {
           "activar_inicio": "11:00",
           "activar_fin": "11:30",
           "rango_inicio": "11:30",
           "rango_fin": "14:30",
-          "jugada": ["46", "65", "71"]
+          "jugada": ["09", "15", "20"]
         },
         {
           "activar_inicio": "17:00",
