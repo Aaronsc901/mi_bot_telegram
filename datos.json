@@ -1,6 +1,5 @@
 {
   "modo_test": true,
-
   "loterias": [
     {
       "nombre": "Guacharo Activo",
@@ -81,8 +80,8 @@
           "activar_fin": "10:00",
           "rango_inicio": "10:00",
           "rango_fin": "13:00",
-          "jugada": ["34", "16", "6"]
-        }
+          "jugada": ["34", "16", "06"]
+        },
         {
           "activar_inicio": "13:30",
           "activar_fin": "14:00",
