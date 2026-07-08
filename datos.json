@@ -2,50 +2,29 @@
   "modo_test": false,
   "loterias": [
     {
-      "nombre": "Guacharo Activo",
-      "visible": "Guácharo Activo",
+      "nombre": "Lotto Activo - La Granjita",
+      "visible": "Lotto Activo - La Granjita",
       "ventanas": [
         {
           "activar_inicio": "00:00",
           "activar_fin": "07:59",
           "rango_inicio": "08:00",
           "rango_fin": "11:00",
-          "jugada": ["65","64","61","43"]
+          "jugada": ["20", "16", "30"]
         },
         {
           "activar_inicio": "11:30",
           "activar_fin": "11:59",
           "rango_inicio": "12:00",
           "rango_fin": "15:00",
-          "jugada": ["16","12"]
+          "jugada": ["01", "17", "07"]
         },
         {
           "activar_inicio": "15:30",
           "activar_fin": "15:59",
           "rango_inicio": "16:00",
           "rango_fin": "19:00",
-          "jugada": ["54","63"]
-        }
-      ]
-    },
-
-    {
-      "nombre": "Lotto Internacional",
-      "visible": "Lotto Internacional",
-      "ventanas": [
-        {
-          "activar_inicio": "08:00",
-          "activar_fin": "08:30",
-          "rango_inicio": "08:30",
-          "rango_fin": "11:30",
-          "jugada": ["17", "03","19"]
-        },
-        {
-          "activar_inicio": "14:00",
-          "activar_fin": "14:30",
-          "rango_inicio": "14:30",
-          "rango_fin": "16:30",
-          "jugada": ["01","32","35"]
+          "jugada": ["01", "17"]
         }
       ]
     },
@@ -66,35 +45,56 @@
           "activar_fin": "17:30",
           "rango_inicio": "17:30",
           "rango_fin": "20:30",
-          "jugada": ["10","06","19"]
+          "jugada": ["10", "06", "19"]
         }
       ]
     },
 
     {
-      "nombre": "Lotto Activo - La Granjita",
-      "visible": "Lotto Activo - La Granjita",
+      "nombre": "Lotto Internacional",
+      "visible": "Lotto Internacional",
+      "ventanas": [
+        {
+          "activar_inicio": "08:00",
+          "activar_fin": "08:30",
+          "rango_inicio": "08:30",
+          "rango_fin": "11:30",
+          "jugada": ["17", "03", "19"]
+        },
+        {
+          "activar_inicio": "14:00",
+          "activar_fin": "14:30",
+          "rango_inicio": "14:30",
+          "rango_fin": "16:30",
+          "jugada": ["01", "32", "35"]
+        }
+      ]
+    },
+
+    {
+      "nombre": "Guacharo Activo",
+      "visible": "Guácharo Activo",
       "ventanas": [
         {
           "activar_inicio": "09:30",
           "activar_fin": "10:00",
           "rango_inicio": "10:00",
           "rango_fin": "13:00",
-          "jugada": ["20", "16","30"]
+          "jugada": ["65", "64", "61", "43"]
         },
         {
           "activar_inicio": "13:30",
           "activar_fin": "14:00",
           "rango_inicio": "14:00",
           "rango_fin": "16:00",
-          "jugada": ["01","17","07"]
+          "jugada": ["16", "12"]
         },
         {
           "activar_inicio": "16:30",
           "activar_fin": "17:00",
           "rango_inicio": "17:00",
           "rango_fin": "19:00",
-          "jugada": ["01","17"]
+          "jugada": ["54", "63"]
         }
       ]
     }
