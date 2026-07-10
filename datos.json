@@ -34,18 +34,18 @@
       "visible": "Ruleta Royal",
       "ventanas": [
         {
-          "activar_inicio": "11:00",
-          "activar_fin": "11:30",
-          "rango_inicio": "11:30",
-          "rango_fin": "14:30",
-          "jugada": ["14","33","21"]
+          "activar_inicio": "08:00",
+          "activar_fin": "08:30",
+          "rango_inicio": "08:30",
+          "rango_fin": "11:30",
+          "jugada": ["33","12","25"]
         },
         {
           "activar_inicio": "17:00",
           "activar_fin": "17:30",
           "rango_inicio": "17:30",
           "rango_fin": "20:30",
-          "jugada": ["36","02","34"]
+          "jugada": ["32",30","02"]
         }
       ]
     },
@@ -55,18 +55,18 @@
       "visible": "Lotto Internacional",
       "ventanas": [
         {
-          "activar_inicio": "08:00",
-          "activar_fin": "08:30",
-          "rango_inicio": "08:30",
-          "rango_fin": "11:30",
-          "jugada": ["35","28","03"]
+          "activar_inicio": "11:00",
+          "activar_fin": "11:30",
+          "rango_inicio": "11:30",
+          "rango_fin": "13:30",
+          "jugada": ["13","06","00"]
         },
         {
           "activar_inicio": "14:00",
           "activar_fin": "14:30",
           "rango_inicio": "14:30",
           "rango_fin": "16:30",
-          "jugada": ["17","06","01"]
+          "jugada": ["35","17",15"]
         }
       ]
     },
@@ -80,21 +80,21 @@
           "activar_fin": "10:00",
           "rango_inicio": "10:00",
           "rango_fin": "13:00",
-          "jugada": ["39","18","30","28"]
+          "jugada": ["69","48","49","60"]
         },
         {
           "activar_inicio": "13:30",
           "activar_fin": "14:00",
           "rango_inicio": "14:00",
           "rango_fin": "16:00",
-          "jugada": ["50","21","49"]
+          "jugada": ["08","00","04"]
         },
         {
           "activar_inicio": "16:30",
           "activar_fin": "17:00",
           "rango_inicio": "17:00",
           "rango_fin": "19:00",
-          "jugada": ["60","68","09"]
+          "jugada": ["72","22","42","61"]
         }
       ]
     }
