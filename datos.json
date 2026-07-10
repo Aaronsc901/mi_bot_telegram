@@ -1,5 +1,5 @@
 {
-  "modo_test": false,
+  "modo_test": true,
   "loterias": [
     {
       "nombre": "Lotto Activo - La Granjita",
@@ -10,21 +10,21 @@
           "activar_fin": "07:59",
           "rango_inicio": "08:00",
           "rango_fin": "11:00",
-          "jugada": ["20","29","12"]
+          "jugada": ["31","18","29"]
         },
         {
           "activar_inicio": "11:30",
           "activar_fin": "11:59",
           "rango_inicio": "12:00",
           "rango_fin": "15:00",
-          "jugada": ["26","20"]
+          "jugada": ["34","07","12","16"]
         },
         {
           "activar_inicio": "15:30",
           "activar_fin": "15:59",
           "rango_inicio": "16:00",
           "rango_fin": "19:00",
-          "jugada": ["26","29","10"]
+          "jugada": ["26"]
         }
       ]
     },
@@ -34,18 +34,18 @@
       "visible": "Ruleta Royal",
       "ventanas": [
         {
-          "activar_inicio": "08:00",
-          "activar_fin": "08:30",
-          "rango_inicio": "08:30",
-          "rango_fin": "11:30",
-          "jugada": ["33","12","25"]
+          "activar_inicio": "11:00",
+          "activar_fin": "11:30",
+          "rango_inicio": "11:30",
+          "rango_fin": "14:30",
+          "jugada": ["32","02","30"]
         },
         {
           "activar_inicio": "17:00",
           "activar_fin": "17:30",
           "rango_inicio": "17:30",
           "rango_fin": "20:30",
-          "jugada": ["32","30","02"]
+          "jugada": ["14","09","12"]
         }
       ]
     },
@@ -55,18 +55,18 @@
       "visible": "Lotto Internacional",
       "ventanas": [
         {
-          "activar_inicio": "11:00",
-          "activar_fin": "11:30",
-          "rango_inicio": "11:30",
-          "rango_fin": "13:30",
-          "jugada": ["13","06","00"]
+          "activar_inicio": "08:00",
+          "activar_fin": "08:30",
+          "rango_inicio": "08:30",
+          "rango_fin": "11:30",
+          "jugada": ["11","31","19"]
         },
         {
           "activar_inicio": "14:00",
           "activar_fin": "14:30",
           "rango_inicio": "14:30",
           "rango_fin": "16:30",
-          "jugada": ["35","17","15"]
+          "jugada": ["35","03","28"]
         }
       ]
     },
@@ -80,21 +80,21 @@
           "activar_fin": "10:00",
           "rango_inicio": "10:00",
           "rango_fin": "13:00",
-          "jugada": ["69","48","49","60"]
+          "jugada": ["21","12","24"]
         },
         {
           "activar_inicio": "13:30",
           "activar_fin": "14:00",
           "rango_inicio": "14:00",
           "rango_fin": "16:00",
-          "jugada": ["08","00","04"]
+          "jugada": ["42","43","34","45"]
         },
         {
           "activar_inicio": "16:30",
           "activar_fin": "17:00",
           "rango_inicio": "17:00",
           "rango_fin": "19:00",
-          "jugada": ["72","22","42","61"]
+          "jugada": ["65","56","54"]
         }
       ]
     }
