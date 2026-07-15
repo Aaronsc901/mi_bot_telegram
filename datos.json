@@ -34,18 +34,18 @@
       "visible": "Ruleta Royal",
       "ventanas": [
         {
-          "activar_inicio": "08:00",
-          "activar_fin": "08:30",
-          "rango_inicio": "08:30",
-          "rango_fin": "11:30",
-          "jugada": ["33","24","29"]
+          "activar_inicio": "11:00",
+          "activar_fin": "11:30",
+          "rango_inicio": "11:30",
+          "rango_fin": "14:30",
+          "jugada": ["35","08","19"]
         },
         {
           "activar_inicio": "17:00",
           "activar_fin": "17:30",
           "rango_inicio": "17:30",
           "rango_fin": "20:30",
-          "jugada": ["19","02","08"]
+          "jugada": ["33","27","12","25"]
         }
       ]
     },
@@ -55,18 +55,18 @@
       "visible": "Lotto Internacional",
       "ventanas": [
         {
-          "activar_inicio": "11:00",
-          "activar_fin": "11:30",
-          "rango_inicio": "11:30",
-          "rango_fin": "13:30",
-          "jugada": ["04","18","31"]
+          "activar_inicio": "08:00",
+          "activar_fin": "08:30",
+          "rango_inicio": "08:30",
+          "rango_fin": "11:30",
+          "jugada": ["27","32","06"]
         },
         {
           "activar_inicio": "14:00",
           "activar_fin": "14:30",
           "rango_inicio": "14:30",
           "rango_fin": "16:30",
-          "jugada": ["07","08","12"]
+          "jugada": ["09","11","25","0","31"]
         }
       ]
     },
@@ -80,21 +80,21 @@
           "activar_fin": "09:00",
           "rango_inicio": "09:00",
           "rango_fin": "12:00",
-          "jugada": ["67","32","58","22"]
+          "jugada": ["37","10","57"]
         },
         {
           "activar_inicio": "13:30",
           "activar_fin": "14:00",
           "rango_inicio": "14:00",
           "rango_fin": "16:00",
-          "jugada": ["24","46","47"]
+          "jugada": ["35","56","16","20"]
         },
         {
           "activar_inicio": "16:30",
           "activar_fin": "17:00",
           "rango_inicio": "17:00",
           "rango_fin": "19:00",
-          "jugada": ["20","42","04","03"]
+          "jugada": ["05","04","06"]
         }
       ]
     }
