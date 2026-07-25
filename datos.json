@@ -34,18 +34,18 @@
       "visible": "Ruleta Royal",
       "ventanas": [
         {
-          "activar_inicio": "08:00",
-          "activar_fin": "08:30",
-          "rango_inicio": "08:30",
-          "rango_fin": "11:30",
-          "jugada": ["33","36","05"]
+          "activar_inicio": "11:00",
+          "activar_fin": "11:30",
+          "rango_inicio": "11:30",
+          "rango_fin": "14:30",
+          "jugada": ["30","33","17"]
         },
         {
           "activar_inicio": "17:00",
           "activar_fin": "17:30",
           "rango_inicio": "17:30",
           "rango_fin": "20:30",
-          "jugada": ["22","13","28","35"]
+          "jugada": ["10","05","28","13"]
         }
       ]
     },
@@ -55,18 +55,18 @@
       "visible": "Lotto Internacional",
       "ventanas": [
         {
-          "activar_inicio": "11:00",
-          "activar_fin": "11:30",
-          "rango_inicio": "11:30",
-          "rango_fin": "14:30",
-          "jugada": ["26","22","13"]
+          "activar_inicio": "08:00",
+          "activar_fin": "08:30",
+          "rango_inicio": "08:30",
+          "rango_fin": "11:30",
+          "jugada": ["22","13","33"]
         },
         {
           "activar_inicio": "14:00",
           "activar_fin": "14:30",
           "rango_inicio": "14:30",
           "rango_fin": "16:30",
-          "jugada": ["11","04","33","05"]
+          "jugada": ["35","04","05"]
         }
       ]
     },
