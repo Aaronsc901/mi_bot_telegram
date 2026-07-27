@@ -76,9 +76,9 @@
       "visible": "Guácharo Activo",
       "ventanas": [
         {
-          "activar_inicio": "10:30",
-          "activar_fin": "11:00",
-          "rango_inicio": "11:00",
+          "activar_inicio": "09:30",
+          "activar_fin": "10:00",
+          "rango_inicio": "10:00",
           "rango_fin": "13:00",
           "jugada": ["42","40","26"]
         },
