@@ -38,14 +38,14 @@
           "activar_fin": "11:30",
           "rango_inicio": "11:30",
           "rango_fin": "14:30",
-          "jugada": ["10","25","16"]
+          "jugada": ["10","25","03"]
         },
         {
           "activar_inicio": "17:00",
           "activar_fin": "17:30",
           "rango_inicio": "17:30",
           "rango_fin": "20:30",
-          "jugada": ["21","03","29","12"]
+          "jugada": ["16","12","29","17"]
         }
       ]
     },
