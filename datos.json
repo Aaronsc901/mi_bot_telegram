@@ -10,21 +10,21 @@
           "activar_fin": "07:59",
           "rango_inicio": "08:00",
           "rango_fin": "11:00",
-          "jugada": ["00","36","03"]
+          "jugada": ["03","33","17"]
         },
         {
           "activar_inicio": "11:30",
           "activar_fin": "11:59",
           "rango_inicio": "12:00",
           "rango_fin": "15:00",
-          "jugada": ["25","27","31"]
+          "jugada": ["36","27","12","14"]
         },
         {
           "activar_inicio": "15:30",
           "activar_fin": "15:59",
           "rango_inicio": "16:00",
           "rango_fin": "19:00",
-          "jugada": ["26","12","27"]
+          "jugada": ["06","26","00","19","32","01","02"]
         }
       ]
     },
