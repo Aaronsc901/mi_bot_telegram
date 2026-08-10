@@ -7,6 +7,10 @@ from zoneinfo import ZoneInfo
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
 
+from dotenv import load_dotenv
+load_dotenv()
+
+
 # ---------------------------------------------------------
 # CARGAR DICCIONARIO DE ANIMALITOS
 # ---------------------------------------------------------
