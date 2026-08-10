@@ -8,7 +8,8 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
 
 from dotenv import load_dotenv
-load_dotenv()
+load_dotenv(dotenv_path="/root/mi_bot_telegram/.env", override=True)
+
 
 
 # ---------------------------------------------------------
