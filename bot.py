@@ -90,7 +90,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ============================
 
 def main():
-    app = ApplicationBuilder().token("TU_TOKEN_AQUI").build()
+    app = ApplicationBuilder().token(8518320550:AAEswn9AJjBlpbuiy_fdoWIOnM8r1zBFvwA).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("tradicional", tradicional))
