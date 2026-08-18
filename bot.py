@@ -10,8 +10,6 @@ from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandle
 from dotenv import load_dotenv
 load_dotenv(dotenv_path="/root/mi_bot_telegram/.env", override=True)
 
-
-
 # ---------------------------------------------------------
 # CARGAR DICCIONARIO DE ANIMALITOS
 # ---------------------------------------------------------
@@ -85,42 +83,34 @@ def hora_en_rango(hora_actual, inicio_str, fin_str):
     return h_inicio <= hora_actual <= h_fin
 
 # ---------------------------------------------------------
-# AJUSTE DINÁMICO DEL RANGO (LÓGICA DEL BOT ANTERIOR)
+# AJUSTE DINÁMICO DEL RANGO
 # ---------------------------------------------------------
 
 def ajustar_rango_dinamico(rango_inicio_str, rango_fin_str, ahora):
-    # Convertir strings a objetos datetime.time
     r_inicio = datetime.strptime(rango_inicio_str, "%H:%M").time()
     r_fin = datetime.strptime(rango_fin_str, "%H:%M").time()
 
-    # Función interna para formatear a 12h
     def formato_12h(t):
         return datetime.strptime(t.strftime("%H:%M"), "%H:%M").strftime("%I:%M %p")
 
-    # Antes del rango → mostrar completo
     if ahora.time() < r_inicio:
         return f"{formato_12h(r_inicio)} - {formato_12h(r_fin)}"
 
-    # Después del rango → solo hora final
     if ahora.time() >= r_fin:
         return f"{formato_12h(r_fin)}"
 
-    # Dentro del rango → ajustar a la próxima hora entera
     siguiente_hora = (ahora.replace(minute=0, second=0, microsecond=0)
                       .replace(hour=ahora.hour + 1))
 
     inicio_dinamico = max(siguiente_hora.time(), r_inicio)
 
-    # Si el inicio dinámico coincide con el final → solo hora final
     if inicio_dinamico >= r_fin:
         return f"{formato_12h(r_fin)}"
 
-    # Mostrar rango ajustado
     return f"{formato_12h(inicio_dinamico)} - {formato_12h(r_fin)}"
 
-
 # ---------------------------------------------------------
-# BUSCAR JUGADA EN CURSO AUNQUE NO HAYA VENTANA ACTIVA
+# BUSCAR JUGADA EN CURSO
 # ---------------------------------------------------------
 
 def buscar_jugada_en_curso(datos, ahora):
@@ -139,7 +129,7 @@ def buscar_jugada_en_curso(datos, ahora):
     return None
 
 # ---------------------------------------------------------
-# SELECCIÓN DE LOTERÍA SEGÚN VENTANAS
+# SELECCIÓN DE LOTERÍA
 # ---------------------------------------------------------
 
 def obtener_loteria_activa(datos, hora_actual=None):
@@ -159,7 +149,7 @@ def obtener_loteria_activa(datos, hora_actual=None):
     return None
 
 # ---------------------------------------------------------
-# OBTENER FAVORITO + NOMBRE
+# OBTENER FAVORITO
 # ---------------------------------------------------------
 
 def obtener_favorito(jugada):
@@ -231,17 +221,13 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     datos = cargar_json_remoto()
     loteria = obtener_loteria_activa(datos)
 
-    # NUEVA LÓGICA: si no hay ventana activa, buscar jugada en curso
     if not loteria:
         jugada_curso = buscar_jugada_en_curso(datos, ahora)
-
         if not jugada_curso:
             await query.answer("📵 Actualmente no hay actualización disponible.", show_alert=True)
             return
-
         loteria = jugada_curso
 
-    # Preparar jugada
     jugada = [md_escape(j) for j in loteria["jugada"]]
     jugada_texto = " \\- ".join([f"*{j}*" for j in jugada]) if jugada else "*Sin jugada cargada*"
 
@@ -255,7 +241,6 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         favorito_texto = "*N/A*"
 
-    # Rango dinámico
     rango_dinamico = ajustar_rango_dinamico(
         loteria["rango_inicio"],
         loteria["rango_fin"],
@@ -274,18 +259,14 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     chat_destino = GRUPO_TEST_ID if MODO_TEST else GRUPO_REAL_ID
 
+    # --- BORRAR MENSAJE ANTERIOR ---
     if MENSAJE_FIJO_ID:
         try:
-            await context.bot.edit_message_text(
-                chat_id=chat_destino,
-                message_id=MENSAJE_FIJO_ID,
-                text=mensaje,
-                parse_mode="MarkdownV2"
-            )
-            return
-        except:
-            MENSAJE_FIJO_ID = None
+            await context.bot.delete_message(chat_destino, MENSAJE_FIJO_ID)
+        except Exception as e:
+            print("No se pudo borrar el mensaje anterior:", e)
 
+    # --- ENVIAR NUEVO ---
     msg = await context.bot.send_message(
         chat_destino,
         mensaje,
