@@ -83,7 +83,7 @@ def hora_en_rango(hora_actual, inicio_str, fin_str):
     return h_inicio <= hora_actual <= h_fin
 
 # ---------------------------------------------------------
-# AJUSTE DINÁMICO DEL RANGO
+# AJUSTE DINÁMICO DEL RANGO (CORREGIDO)
 # ---------------------------------------------------------
 
 def ajustar_rango_dinamico(rango_inicio_str, rango_fin_str, ahora):
@@ -93,22 +93,25 @@ def ajustar_rango_dinamico(rango_inicio_str, rango_fin_str, ahora):
     def formato_12h(t):
         return datetime.strptime(t.strftime("%H:%M"), "%H:%M").strftime("%I:%M %p")
 
+    # Si aún no empieza el rango
     if ahora.time() < r_inicio:
         return f"{formato_12h(r_inicio)} - {formato_12h(r_fin)}"
 
+    # Si ya terminó el rango
     if ahora.time() >= r_fin:
         return f"{formato_12h(r_fin)}"
 
+    # Calcular siguiente hora exacta
     siguiente_hora = (ahora.replace(minute=0, second=0, microsecond=0)
                       .replace(hour=ahora.hour + 1))
 
     inicio_dinamico = max(siguiente_hora.time(), r_inicio)
 
+    # CORRECCIÓN: si el inicio dinámico alcanza o iguala el fin → mostrar solo el fin
     if inicio_dinamico >= r_fin:
         return f"{formato_12h(r_fin)}"
 
     return f"{formato_12h(inicio_dinamico)} - {formato_12h(r_fin)}"
-
 # ---------------------------------------------------------
 # BUSCAR JUGADA EN CURSO
 # ---------------------------------------------------------
@@ -276,7 +279,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     MENSAJE_FIJO_ID = msg.message_id
 
 # ---------------------------------------------------------
-# NUEVO COMANDO /multi
+# NUEVO COMANDO /multi (CORREGIDO activar_inicio → rango_fin)
 # ---------------------------------------------------------
 
 async def multi(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -288,21 +291,14 @@ async def multi(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     jugadas_activas = []
 
-    # Buscar jugadas activas por ventana de activación
+    # NUEVA REGLA: activar_inicio → rango_fin
     for loteria in datos["loterias"]:
         for ventana in loteria["ventanas"]:
-            if hora_en_rango(ahora.time(), ventana["activar_inicio"], ventana["activar_fin"]):
+            a_inicio = datetime.strptime(ventana["activar_inicio"], "%H:%M").time()
+            r_fin = datetime.strptime(ventana["rango_fin"], "%H:%M").time()
+
+            if a_inicio <= ahora.time() <= r_fin:
                 jugadas_activas.append(loteria["visible"])
-
-    # Si no hay activas, buscar jugadas en curso
-    if not jugadas_activas:
-        for loteria in datos["loterias"]:
-            for ventana in loteria["ventanas"]:
-                r_inicio = datetime.strptime(ventana["rango_inicio"], "%H:%M").time()
-                r_fin = datetime.strptime(ventana["rango_fin"], "%H:%M").time()
-
-                if r_inicio <= ahora.time() <= r_fin:
-                    jugadas_activas.append(loteria["visible"])
 
     if not jugadas_activas:
         await update.message.reply_text("📵 No hay jugadas activas en este momento.")
@@ -324,7 +320,6 @@ async def multi(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Selecciona la jugada que deseas consultar:",
         reply_markup=reply_markup
     )
-
 # ---------------------------------------------------------
 # CALLBACK PARA /multi
 # ---------------------------------------------------------
@@ -367,13 +362,16 @@ async def handle_multi(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Buscar ventana activa o jugada en curso
     jugada_final = None
 
-    # Ventana activa
+    # Ventana activa (según activar_inicio → rango_fin)
     for ventana in loteria_obj["ventanas"]:
-        if hora_en_rango(ahora.time(), ventana["activar_inicio"], ventana["activar_fin"]):
+        a_inicio = datetime.strptime(ventana["activar_inicio"], "%H:%M").time()
+        r_fin = datetime.strptime(ventana["rango_fin"], "%H:%M").time()
+
+        if a_inicio <= ahora.time() <= r_fin:
             jugada_final = ventana
             break
 
-    # Jugada en curso
+    # Jugada en curso (backup)
     if not jugada_final:
         for ventana in loteria_obj["ventanas"]:
             r_inicio = datetime.strptime(ventana["rango_inicio"], "%H:%M").time()
@@ -510,3 +508,15 @@ def main():
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("id", get_id))
+    app.add_handler(CommandHandler("reset", reset))
+    app.add_handler(CommandHandler("simular", simular))
+    app.add_handler(CommandHandler("multi", multi))
+
+    app.add_handler(CallbackQueryHandler(handle_callback, pattern="^consulta$"))
+    app.add_handler(CallbackQueryHandler(handle_multi, pattern="^multi_"))
+
+    cargar_modo_test()
+    app.run_polling()
+
+if __name__ == "__main__":
+    main()
