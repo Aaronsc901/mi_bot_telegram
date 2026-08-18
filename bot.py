@@ -171,7 +171,7 @@ def obtener_favorito(jugada):
     return favorito_num, favorito_nombre
 
 # ---------------------------------------------------------
-# COMANDO /start
+# COMANDO /start (NO SE TOCA)
 # ---------------------------------------------------------
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -187,7 +187,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 # ---------------------------------------------------------
-# CALLBACK PRINCIPAL
+# CALLBACK PRINCIPAL (NO SE TOCA)
 # ---------------------------------------------------------
 
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -263,8 +263,8 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if MENSAJE_FIJO_ID:
         try:
             await context.bot.delete_message(chat_destino, MENSAJE_FIJO_ID)
-        except Exception as e:
-            print("No se pudo borrar el mensaje anterior:", e)
+        except:
+            pass
 
     # --- ENVIAR NUEVO ---
     msg = await context.bot.send_message(
@@ -276,70 +276,176 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     MENSAJE_FIJO_ID = msg.message_id
 
 # ---------------------------------------------------------
-# COMANDO /simular HH:MM
+# NUEVO COMANDO /multi
 # ---------------------------------------------------------
 
-async def simular(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def multi(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not grupo_permitido(update.effective_chat.id):
         return
 
-    if len(context.args) != 1:
-        await update.message.reply_text("Uso correcto:\n/simular HH:MM")
-        return
-
-    try:
-        hora_simulada = datetime.strptime(context.args[0], "%H:%M").time()
-    except:
-        await update.message.reply_text("Formato inválido. Usa HH:MM (ej: 14:25)")
-        return
-
+    ahora = datetime.now(ZoneInfo("America/Caracas"))
     datos = cargar_json_remoto()
-    loteria = obtener_loteria_activa(datos, hora_simulada)
 
-    ahora = datetime.now(ZoneInfo("America/Caracas")).replace(
-        hour=hora_simulada.hour,
-        minute=hora_simulada.minute,
-        second=0,
-        microsecond=0
+    jugadas_activas = []
+
+    # Buscar jugadas activas por ventana de activación
+    for loteria in datos["loterias"]:
+        for ventana in loteria["ventanas"]:
+            if hora_en_rango(ahora.time(), ventana["activar_inicio"], ventana["activar_fin"]):
+                jugadas_activas.append(loteria["visible"])
+
+    # Si no hay activas, buscar jugadas en curso
+    if not jugadas_activas:
+        for loteria in datos["loterias"]:
+            for ventana in loteria["ventanas"]:
+                r_inicio = datetime.strptime(ventana["rango_inicio"], "%H:%M").time()
+                r_fin = datetime.strptime(ventana["rango_fin"], "%H:%M").time()
+
+                if r_inicio <= ahora.time() <= r_fin:
+                    jugadas_activas.append(loteria["visible"])
+
+    if not jugadas_activas:
+        await update.message.reply_text("📵 No hay jugadas activas en este momento.")
+        return
+
+    # Crear botones
+    botones = []
+    for nombre in jugadas_activas:
+        botones.append([
+            InlineKeyboardButton(
+                nombre,
+                callback_data=f"multi_{nombre}"
+            )
+        ])
+
+    reply_markup = InlineKeyboardMarkup(botones)
+
+    await update.message.reply_text(
+        "Selecciona la jugada que deseas consultar:",
+        reply_markup=reply_markup
     )
 
-    if not loteria:
-        jugada_curso = buscar_jugada_en_curso(datos, ahora)
-        if not jugada_curso:
-            await update.message.reply_text("📵 Actualmente no hay actualización disponible.")
-            return
-        loteria = jugada_curso
+# ---------------------------------------------------------
+# CALLBACK PARA /multi
+# ---------------------------------------------------------
 
-    jugada = [md_escape(j) for j in loteria["jugada"]]
-    jugada_texto = " \\- ".join([f"*{j}*" for j in jugada]) if jugada else "*Sin jugada cargada*"
+async def handle_multi(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global MENSAJE_FIJO_ID, ULTIMA_EJECUCION_GLOBAL
 
-    favorito_num, favorito_nombre = obtener_favorito(loteria["jugada"])
+    query = update.callback_query
+    await query.answer()
 
-    if favorito_num:
-        if favorito_nombre:
-            favorito_texto = f"*{md_escape(favorito_num)} \\({md_escape(favorito_nombre)}\\)*"
-        else:
-            favorito_texto = f"*{md_escape(favorito_num)}*"
-    else:
-        favorito_texto = "*N/A*"
+    if not grupo_permitido(query.message.chat.id):
+        return
+
+    ahora_ts = datetime.now().timestamp()
+    ahora = datetime.now(ZoneInfo("America/Caracas"))
+
+    # Anti doble ejecución
+    if ahora_ts - ULTIMA_EJECUCION_GLOBAL < COOLDOWN_GLOBAL:
+        await query.answer("⚠️ Procesando… intenta nuevamente en un momento.")
+        return
+
+    ULTIMA_EJECUCION_GLOBAL = ahora_ts
+
+    datos = cargar_json_remoto()
+
+    # Extraer nombre de lotería desde callback_data
+    nombre_loteria = query.data.replace("multi_", "")
+
+    # Buscar la lotería seleccionada
+    loteria_obj = None
+    for loteria in datos["loterias"]:
+        if loteria["visible"] == nombre_loteria:
+            loteria_obj = loteria
+            break
+
+    if not loteria_obj:
+        await query.answer(f"❌ Lotería no encontrada: {nombre_loteria}", show_alert=True)
+        return
+
+    # Buscar ventana activa o jugada en curso
+    jugada_final = None
+
+    # Ventana activa
+    for ventana in loteria_obj["ventanas"]:
+        if hora_en_rango(ahora.time(), ventana["activar_inicio"], ventana["activar_fin"]):
+            jugada_final = ventana
+            break
+
+    # Jugada en curso
+    if not jugada_final:
+        for ventana in loteria_obj["ventanas"]:
+            r_inicio = datetime.strptime(ventana["rango_inicio"], "%H:%M").time()
+            r_fin = datetime.strptime(ventana["rango_fin"], "%H:%M").time()
+            if r_inicio <= ahora.time() <= r_fin:
+                jugada_final = ventana
+                break
+
+    chat_destino = GRUPO_TEST_ID if MODO_TEST else GRUPO_REAL_ID
+
+    # Si NO hay jugada disponible
+    if not jugada_final:
+        mensaje = (
+            f"📵 *No hay jugada disponible en este momento*\n"
+            f"Para la lotería consultada: *{md_escape(nombre_loteria)}*"
+        )
+
+        if MENSAJE_FIJO_ID:
+            try:
+                await context.bot.delete_message(chat_destino, MENSAJE_FIJO_ID)
+            except:
+                pass
+
+        msg = await context.bot.send_message(
+            chat_destino,
+            mensaje,
+            parse_mode="MarkdownV2"
+        )
+
+        MENSAJE_FIJO_ID = msg.message_id
+        return
+
+    # Preparar mensaje normal
+    jugada = [md_escape(j) for j in jugada_final["jugada"]]
+    jugada_texto = " \\- ".join([f"*{j}*" for j in jugada])
+
+    favorito_num, favorito_nombre = obtener_favorito(jugada_final["jugada"])
+    favorito_texto = (
+        f"*{md_escape(favorito_num)}*"
+        if not favorito_nombre
+        else f"*{md_escape(favorito_num)} \\({md_escape(favorito_nombre)}\\)*"
+    )
 
     rango_dinamico = ajustar_rango_dinamico(
-        loteria["rango_inicio"],
-        loteria["rango_fin"],
+        jugada_final["rango_inicio"],
+        jugada_final["rango_fin"],
         ahora
     )
 
     mensaje = (
-        "🧪 *SIMULACIÓN DE JUGADA* 🧪\n"
-        f"🕒 *Hora simulada:* `{context.args[0]}`\n\n"
-        f"🎯 *Lotería:* *{md_escape(loteria['visible'])}*\n"
+        f"🔥 *{md_escape(nombre_loteria)}* 🔥\n"
+        f"📅 *Actualización:* `{ahora.strftime('%I:%M %p')}`\n\n"
         f"🕒 *Sorteo:* `{rango_dinamico}`\n"
         f"🐾 *Favorito:* {favorito_texto}\n\n"
-        "🔢 *Jugada simulada:*\n"
-        f"{jugada_texto}"
+        f"🔢 *Jugada:* {jugada_texto}"
     )
 
-    await update.message.reply_text(mensaje, parse_mode="MarkdownV2")
+    # Borrar mensaje anterior
+    if MENSAJE_FIJO_ID:
+        try:
+            await context.bot.delete_message(chat_destino, MENSAJE_FIJO_ID)
+        except:
+            pass
+
+    # Enviar nuevo
+    msg = await context.bot.send_message(
+        chat_destino,
+        mensaje,
+        parse_mode="MarkdownV2"
+    )
+
+    MENSAJE_FIJO_ID = msg.message_id
 
 # ---------------------------------------------------------
 # COMANDOS /id y /reset
@@ -364,7 +470,10 @@ def main():
     app.add_handler(CommandHandler("id", get_id))
     app.add_handler(CommandHandler("reset", reset))
     app.add_handler(CommandHandler("simular", simular))
-    app.add_handler(CallbackQueryHandler(handle_callback))
+    app.add_handler(CommandHandler("multi", multi))
+
+    app.add_handler(CallbackQueryHandler(handle_callback, pattern="^consulta$"))
+    app.add_handler(CallbackQueryHandler(handle_multi, pattern="^multi_"))
 
     cargar_modo_test()
     app.run_polling()
