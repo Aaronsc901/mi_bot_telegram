@@ -60,7 +60,7 @@
           "activar_fin": "08:30",
           "rango_inicio": "08:30",
           "rango_fin": "11:30",
-          "jugada": ["34",36","27"]
+          "jugada": ["34","36","27"]
         },
         {
           "activar_inicio": "13:00",
