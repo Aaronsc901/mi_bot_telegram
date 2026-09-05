@@ -7,7 +7,7 @@
       "ventanas": [
         {
           "activar_inicio": "01:00",
-          "activar_fin": "07:59",
+          "activar_fin": "07:58",
           "rango_inicio": "08:00",
           "rango_fin": "11:00",
           "jugada": ["25","22","29"]
