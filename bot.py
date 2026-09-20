@@ -72,9 +72,10 @@ def cargar_json_remoto():
         print("ERROR cargando JSON remoto:", e)
         return {"loterias": []}
 
-
 def grupo_permitido(chat_id):
+    cargar_modo_test()  # 🔥 Recarga modo_test SIEMPRE
     return chat_id == (GRUPO_TEST_ID if MODO_TEST else GRUPO_REAL_ID)
+
 
 def cargar_modo_test():
     global MODO_TEST
