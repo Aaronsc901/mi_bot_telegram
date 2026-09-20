@@ -491,19 +491,28 @@ async def reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ---------------------------------------------------------
 
 def main():
+    print("=== INICIANDO BOT ===")
+
     app = ApplicationBuilder().token(TOKEN).build()
-    print("BOT INICIANDO...")
+
+    print("Cargando modo_test...")
     cargar_modo_test()
+    print("MODO_TEST actual:", MODO_TEST)
+
+    print("Registrando comandos...")
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("id", get_id))
     app.add_handler(CommandHandler("reset", reset))
     app.add_handler(CommandHandler("simular", simular))
     app.add_handler(CommandHandler("multi", multi))
-    print("REGISTRANDO HANDLERS...")
+
+    print("Registrando callbacks...")
     app.add_handler(CallbackQueryHandler(handle_callback, pattern="^consulta$"))
     app.add_handler(CallbackQueryHandler(handle_multi, pattern="^multi_.*$"))
 
-    print("INICIANDO POLLING...")
+    print("BOT INICIADO Y ESPERANDO CALLBACKS...")
+    print("======================================")
+
     app.run_polling()
 
 if __name__ == "__main__":
