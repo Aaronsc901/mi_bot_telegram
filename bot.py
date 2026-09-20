@@ -326,7 +326,11 @@ async def handle_multi(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global MENSAJE_FIJO_ID, ULTIMA_EJECUCION_GLOBAL
 
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception as e:
+        print("ERROR en query.answer:", e)
+
 
     chat_origen = query.message.chat.id
     if not grupo_permitido(chat_origen):
@@ -426,11 +430,16 @@ async def handle_multi(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except:
             pass
 
-    msg = await context.bot.send_message(
-        chat_destino,
-        mensaje,
-        parse_mode="MarkdownV2"
-    )
+    try:
+        msg = await context.bot.send_message(
+            chat_destino,
+            mensaje,
+            parse_mode="MarkdownV2"
+        )
+    except Exception as e:
+        print("ERROR enviando mensaje:", e)
+        return
+
 
     MENSAJE_FIJO_ID = msg.message_id
 
@@ -515,7 +524,8 @@ def main():
     print("BOT INICIADO Y ESPERANDO CALLBACKS...")
     print("======================================")
 
-    app.run_polling()
+    app.run_polling(drop_pending_updates=True)
+
 
 if __name__ == "__main__":
     main()
