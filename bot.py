@@ -512,7 +512,7 @@ async def reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
-
+    print("BOT INICIANDO...")
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("id", get_id))
     app.add_handler(CommandHandler("reset", reset))
