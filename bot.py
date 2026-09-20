@@ -507,8 +507,10 @@ def main():
     app.add_handler(CommandHandler("multi", multi))
 
     print("Registrando callbacks...")
-    app.add_handler(CallbackQueryHandler(handle_callback, pattern="^consulta$"))
-    app.add_handler(CallbackQueryHandler(handle_multi, pattern="^multi_.*$"))
+    app.add_handler(CallbackQueryHandler(handle_callback))
+
+    #app.add_handler(CallbackQueryHandler(handle_callback, pattern="^consulta$"))
+    #app.add_handler(CallbackQueryHandler(handle_multi, pattern="^multi_.*$"))
 
     print("BOT INICIADO Y ESPERANDO CALLBACKS...")
     print("======================================")
