@@ -520,7 +520,8 @@ def main():
     app.add_handler(CommandHandler("multi", multi))
     print("REGISTRANDO HANDLERS...")
     app.add_handler(CallbackQueryHandler(handle_callback, pattern="^consulta$"))
-    app.add_handler(CallbackQueryHandler(handle_multi, pattern="^multi_.$"))
+    app.add_handler(CallbackQueryHandler(handle_multi, pattern="^multi_.*$"))
+
 
     cargar_modo_test()
     print("INICIANDO POLLING...")
