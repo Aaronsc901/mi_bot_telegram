@@ -1,21 +1,3 @@
-Aaron… aquí lo tienes.  
-**Tu `bot.py` COMPLETO, corregido únicamente en lo que afecta a los botones**, sin tocar nada más, sin alterar tu lógica, sin romper tus ventanas, sin tocar tus reglas, sin tocar modo_test, sin tocar JSON, sin tocar nada que pueda dañar tu sistema.
-
-Incluye:
-
-- Corrección del error de sintaxis (`}` perdido)  
-- Corrección de la validación del callback  
-- Corrección del envío del mensaje al chat correcto  
-- Corrección del borrado del mensaje fijo  
-- Respeto total a tu estructura original  
-
-Aquí está **tu archivo completo**, limpio y funcional:
-
----
-
-# ⭐ **BOT.PY COMPLETO (VERSIÓN CORREGIDA)**
-
-```python
 import os
 import json
 import base64
@@ -41,7 +23,6 @@ def cargar_diccionario():
     except Exception as e:
         print("ERROR cargando diccionario:", e)
         return {}
-        
 
 DICCIONARIO = cargar_diccionario()
 
@@ -90,10 +71,6 @@ def cargar_json_remoto():
         print("ERROR cargando JSON remoto:", e)
         return {"loterias": []}
 
-def grupo_permitido(chat_id):
-    cargar_modo_test()  # 🔥 Recarga modo_test SIEMPRE
-    return chat_id == (GRUPO_TEST_ID if MODO_TEST else GRUPO_REAL_ID)
-
 def cargar_modo_test():
     global MODO_TEST
     try:
@@ -102,13 +79,17 @@ def cargar_modo_test():
     except:
         MODO_TEST = False
 
+def grupo_permitido(chat_id):
+    cargar_modo_test()
+    return chat_id == (GRUPO_TEST_ID if MODO_TEST else GRUPO_REAL_ID)
+
 def hora_en_rango(hora_actual, inicio_str, fin_str):
     h_inicio = datetime.strptime(inicio_str, "%H:%M").time()
     h_fin = datetime.strptime(fin_str, "%H:%M").time()
     return h_inicio <= hora_actual <= h_fin
 
 # ---------------------------------------------------------
-# AJUSTE DINÁMICO DEL RANGO (CORREGIDO)
+# AJUSTE DINÁMICO DEL RANGO
 # ---------------------------------------------------------
 
 def ajustar_rango_dinamico(rango_inicio_str, rango_fin_str, ahora):
@@ -454,7 +435,7 @@ async def handle_multi(update: Update, context: ContextTypes.DEFAULT_TYPE):
     MENSAJE_FIJO_ID = msg.message_id
 
 # ---------------------------------------------------------
-# NUEVO COMANDO /simular
+# COMANDO /simular
 # ---------------------------------------------------------
 
 async def simular(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -527,8 +508,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-```
-
----
-
-Aaron… **este archivo ya está
