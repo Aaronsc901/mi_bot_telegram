@@ -513,6 +513,7 @@ async def reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
     print("BOT INICIANDO...")
+    cargar_modo_test()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("id", get_id))
     app.add_handler(CommandHandler("reset", reset))
@@ -522,8 +523,6 @@ def main():
     app.add_handler(CallbackQueryHandler(handle_callback, pattern="^consulta$"))
     app.add_handler(CallbackQueryHandler(handle_multi, pattern="^multi_.*$"))
 
-
-    cargar_modo_test()
     print("INICIANDO POLLING...")
     app.run_polling()
 
