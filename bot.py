@@ -36,7 +36,7 @@ GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_API_URL = "https://api.github.com/repos/Aaronsc901/mi_bot_telegram/contents/datos.json?ref=master"
 
 GRUPO_REAL_ID = -1002793980909
-GRUPO_TEST_ID = -1004319978717
+GRUPO_TEST_ID = -1003708520026
 
 MODO_TEST = None
 MENSAJE_FIJO_ID = None
