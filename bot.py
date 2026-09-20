@@ -268,7 +268,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"{jugada_texto}"
     )
 
-    chat_destino = GRUPO_TEST_ID if MODO_TEST else GRUPO_REAL_ID
+    chat_destino = query.message.chat.id
 
     # --- BORRAR MENSAJE ANTERIOR ---
     if MENSAJE_FIJO_ID:
@@ -338,7 +338,8 @@ async def handle_multi(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    if not grupo_permitido(query.message.chat.id):
+    chat_origen = query.message.chat.id}
+    if not grupo_permitido(chat_origen):
         return
 
     ahora_ts = datetime.now().timestamp()
@@ -440,7 +441,7 @@ async def handle_multi(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Borrar mensaje anterior
     if MENSAJE_FIJO_ID:
         try:
-            await context.bot.delete_message(chat_destino, MENSAJE_FIJO_ID)
+            await context.bot.delete_message(query.message.chat.id, MENSAJE_FIJO_ID)
         except:
             pass
 
