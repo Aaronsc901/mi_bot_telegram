@@ -23,6 +23,7 @@ def cargar_diccionario():
     except Exception as e:
         print("ERROR cargando diccionario:", e)
         return {}
+        
 
 DICCIONARIO = cargar_diccionario()
 
@@ -60,11 +61,17 @@ def md_escape(text: str) -> str:
 
 def cargar_json_remoto():
     headers = {"Authorization": f"token {GITHUB_TOKEN}"}
-    r = requests.get(GITHUB_API_URL, headers=headers).json()
-    contenido = base64.b64decode(r["content"]).decode()
-    datos = json.loads(contenido)
-    datos["_sha"] = r["sha"]
-    return datos
+    try:
+        r = requests.get(GITHUB_API_URL, headers=headers, timeout=5)
+        r.raise_for_status()
+        contenido = base64.b64decode(r.json()["content"]).decode()
+        datos = json.loads(contenido)
+        datos["_sha"] = r.json()["sha"]
+        return datos
+    except Exception as e:
+        print("ERROR cargando JSON remoto:", e)
+        return {"loterias": []}
+
 
 def grupo_permitido(chat_id):
     return chat_id == (GRUPO_TEST_ID if MODO_TEST else GRUPO_REAL_ID)
