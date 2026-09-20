@@ -1,3 +1,4 @@
+import asyncio
 import os
 import json
 import base64
@@ -5,24 +6,23 @@ import requests
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from aiogram import Bot, Dispatcher, types
+from aiogram import Bot, Dispatcher, Router, types
+from aiogram.filters import Command
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from aiogram.utils import executor
-
 from dotenv import load_dotenv
-load_dotenv(dotenv_path="/root/mi_bot_telegram/.env", override=True)
 
-# ---------------------------------------------------------
-# CONFIGURACIÓN GENERAL
-# ---------------------------------------------------------
+# =========================================================
+# CONFIG
+# =========================================================
+
+load_dotenv(dotenv_path="/root/mi_bot_telegram/.env", override=True)
 
 TOKEN = os.getenv("TOKEN")
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
 bot = Bot(token=TOKEN)
-dp = Dispatcher(bot)
-
-GITHUB_API_URL = "https://api.github.com/repos/Aaronsc901/mi_bot_telegram/contents/datos.json?ref=master"
+dp = Dispatcher()
+router = Router()
 
 GRUPO_REAL_ID = -1002793980909
 GRUPO_TEST_ID = -1003708520026
@@ -36,9 +36,11 @@ COOLDOWN = 30
 ULTIMA_EJECUCION_GLOBAL = 0
 COOLDOWN_GLOBAL = 3
 
-# ---------------------------------------------------------
+GITHUB_API_URL = "https://api.github.com/repos/Aaronsc901/mi_bot_telegram/contents/datos.json?ref=master"
+
+# =========================================================
 # DICCIONARIO ANIMALITOS
-# ---------------------------------------------------------
+# =========================================================
 
 def cargar_diccionario():
     url = "https://raw.githubusercontent.com/Aaronsc901/mi_bot_telegram/master/diccionario_animalitos.json"
@@ -52,9 +54,9 @@ def cargar_diccionario():
 
 DICCIONARIO = cargar_diccionario()
 
-# ---------------------------------------------------------
+# =========================================================
 # UTILIDADES
-# ---------------------------------------------------------
+# =========================================================
 
 def md_escape(text: str) -> str:
     especiales = r"_*[]()~`>#+-=|{}"
@@ -164,28 +166,31 @@ def obtener_favorito(jugada):
 
     return favorito_num, favorito_nombre
 
-# ---------------------------------------------------------
-# COMANDO /start
-# ---------------------------------------------------------
+# =========================================================
+# /start
+# =========================================================
 
-@dp.message_handler(commands=['start'])
+@router.message(Command("start"))
 async def start(message: types.Message):
     if not grupo_permitido(message.chat.id):
         return
 
-    keyboard = InlineKeyboardMarkup()
-    keyboard.add(InlineKeyboardButton("CONSULTAR JUGADA", callback_data="consulta"))
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="CONSULTAR JUGADA", callback_data="consulta")]
+        ]
+    )
 
     await message.answer(
         "Presiona el botón para ver la jugada actual:",
         reply_markup=keyboard
     )
 
-# ---------------------------------------------------------
-# CALLBACK PRINCIPAL (consulta)
-# ---------------------------------------------------------
+# =========================================================
+# CALLBACK PRINCIPAL
+# =========================================================
 
-@dp.callback_query_handler(lambda c: c.data == "consulta")
+@router.callback_query(lambda c: c.data == "consulta")
 async def handle_callback(callback: types.CallbackQuery):
     global MENSAJE_FIJO_ID, ULTIMA_EJECUCION_GLOBAL
 
@@ -266,11 +271,11 @@ async def handle_callback(callback: types.CallbackQuery):
 
     MENSAJE_FIJO_ID = msg.message_id
 
-# ---------------------------------------------------------
-# COMANDO /multi
-# ---------------------------------------------------------
+# =========================================================
+# /multi
+# =========================================================
 
-@dp.message_handler(commands=['multi'])
+@router.message(Command("multi"))
 async def multi(message: types.Message):
     if not grupo_permitido(message.chat.id):
         return
@@ -289,35 +294,30 @@ async def multi(message: types.Message):
                 jugadas_activas.append(loteria["visible"])
 
     if not jugadas_activas:
-        await message.reply("📵 No hay jugadas activas en este momento.")
+        await message.answer("📵 No hay jugadas activas en este momento.")
         return
 
-    keyboard = InlineKeyboardMarkup()
-    for nombre in jugadas_activas:
-        keyboard.add(
-            InlineKeyboardButton(
-                nombre,
-                callback_data=f"multi_{nombre}"
-            )
-        )
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text=nombre, callback_data=f"multi_{nombre}")]
+            for nombre in jugadas_activas
+        ]
+    )
 
     await message.answer(
         "Selecciona la jugada que deseas consultar:",
         reply_markup=keyboard
     )
 
-# ---------------------------------------------------------
-# CALLBACK PARA /multi
-# ---------------------------------------------------------
+# =========================================================
+# CALLBACK /multi
+# =========================================================
 
-@dp.callback_query_handler(lambda c: c.data.startswith("multi_"))
+@router.callback_query(lambda c: c.data.startswith("multi_"))
 async def handle_multi(callback: types.CallbackQuery):
     global MENSAJE_FIJO_ID, ULTIMA_EJECUCION_GLOBAL
 
-    try:
-        await callback.answer()
-    except Exception as e:
-        print("ERROR en callback.answer:", e)
+    await callback.answer()
 
     chat_origen = callback.message.chat.id
     if not grupo_permitido(chat_origen):
@@ -417,23 +417,19 @@ async def handle_multi(callback: types.CallbackQuery):
         except:
             pass
 
-    try:
-        msg = await bot.send_message(
-            chat_destino,
-            mensaje,
-            parse_mode="MarkdownV2"
-        )
-    except Exception as e:
-        print("ERROR enviando mensaje:", e)
-        return
+    msg = await bot.send_message(
+        chat_destino,
+        mensaje,
+        parse_mode="MarkdownV2"
+    )
 
     MENSAJE_FIJO_ID = msg.message_id
 
-# ---------------------------------------------------------
-# COMANDO /simular
-# ---------------------------------------------------------
+# =========================================================
+# /simular
+# =========================================================
 
-@dp.message_handler(commands=['simular'])
+@router.message(Command("simular"))
 async def simular(message: types.Message):
     if not grupo_permitido(message.chat.id):
         return
@@ -470,26 +466,28 @@ async def simular(message: types.Message):
         parse_mode="MarkdownV2"
     )
 
-# ---------------------------------------------------------
-# COMANDOS /id y /reset
-# ---------------------------------------------------------
+# =========================================================
+# /id y /reset
+# =========================================================
 
-@dp.message_handler(commands=['id'])
+@router.message(Command("id"))
 async def get_id(message: types.Message):
     await message.answer(f"Chat ID: {message.chat.id}")
 
-@dp.message_handler(commands=['reset'])
+@router.message(Command("reset"))
 async def reset(message: types.Message):
     global MENSAJE_FIJO_ID
     MENSAJE_FIJO_ID = None
     await message.answer("Reiniciado. Mensaje fijo limpiado.")
 
-# ---------------------------------------------------------
+# =========================================================
 # MAIN
-# ---------------------------------------------------------
+# =========================================================
+
+async def main():
+    cargar_modo_test()
+    dp.include_router(router)
+    await dp.start_polling(bot)
 
 if __name__ == "__main__":
-    print("=== INICIANDO BOT AIROGRAM ===")
-    cargar_modo_test()
-    print("MODO_TEST actual:", MODO_TEST)
-    executor.start_polling(dp, skip_updates=True)
+    asyncio.run(main())
