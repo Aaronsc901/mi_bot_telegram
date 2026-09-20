@@ -3,7 +3,7 @@ import os
 import json
 import base64
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from aiogram import Bot, Dispatcher, Router, types
@@ -89,64 +89,49 @@ def grupo_permitido(chat_id):
     cargar_modo_test()
     return chat_id == (GRUPO_TEST_ID if MODO_TEST else GRUPO_REAL_ID)
 
-def hora_en_rango(hora_actual, inicio_str, fin_str):
-    h_inicio = datetime.strptime(inicio_str, "%H:%M").time()
-    h_fin = datetime.strptime(fin_str, "%H:%M").time()
-    return h_inicio <= hora_actual <= h_fin
+# =========================================================
+# PARCHE DINÁMICO FINAL
+# =========================================================
 
 def ajustar_rango_dinamico(rango_inicio_str, rango_fin_str, ahora):
-    r_inicio = datetime.strptime(rango_inicio_str, "%H:%M").time()
-    r_fin = datetime.strptime(rango_fin_str, "%H:%M").time()
+    r_inicio_dt = datetime.strptime(rango_inicio_str, "%H:%M")
+    r_fin_dt = datetime.strptime(rango_fin_str, "%H:%M")
+
+    r_inicio = r_inicio_dt.time()
+    r_fin = r_fin_dt.time()
+    hora_actual = ahora.time()
 
     def formato_12h(t):
         return datetime.strptime(t.strftime("%H:%M"), "%H:%M").strftime("%I:%M %p")
 
-    if ahora.time() < r_inicio:
+    es_30_min = rango_inicio_str.endswith(":30")
+
+    sorteos = []
+    actual = r_inicio_dt
+
+    while actual <= r_fin_dt:
+        sorteos.append(actual.time())
+        actual += timedelta(minutes=30 if es_30_min else 60)
+
+    if hora_actual < r_inicio:
         return f"{formato_12h(r_inicio)} - {formato_12h(r_fin)}"
 
-    if ahora.time() >= r_fin:
-        return f"{formato_12h(r_fin)}"
+    if r_inicio <= hora_actual < r_fin:
+        restantes = [s for s in sorteos if s > hora_actual]
 
-    siguiente_hora = (ahora.replace(minute=0, second=0, microsecond=0)
-                      .replace(hour=ahora.hour + 1))
+        if not restantes:
+            return None
 
-    inicio_dinamico = max(siguiente_hora.time(), r_inicio)
+        if len(restantes) == 1:
+            return f"{formato_12h(restantes[0])}"
 
-    if inicio_dinamico >= r_fin:
-        return f"{formato_12h(r_fin)}"
-
-    return f"{formato_12h(inicio_dinamico)} - {formato_12h(r_fin)}"
-
-def buscar_jugada_en_curso(datos, ahora):
-    for loteria in datos["loterias"]:
-        for ventana in loteria["ventanas"]:
-            r_inicio = datetime.strptime(ventana["rango_inicio"], "%H:%M").time()
-            r_fin = datetime.strptime(ventana["rango_fin"], "%H:%M").time()
-
-            if r_inicio <= ahora.time() <= r_fin:
-                return {
-                    "visible": loteria["visible"],
-                    "rango_inicio": ventana["rango_inicio"],
-                    "rango_fin": ventana["rango_fin"],
-                    "jugada": ventana["jugada"]
-                }
-    return None
-
-def obtener_loteria_activa(datos, hora_actual=None):
-    if hora_actual is None:
-        hora_actual = datetime.now(ZoneInfo("America/Caracas")).time()
-
-    for loteria in datos["loterias"]:
-        for ventana in loteria["ventanas"]:
-            if hora_en_rango(hora_actual, ventana["activar_inicio"], ventana["activar_fin"]):
-                return {
-                    "visible": loteria["visible"],
-                    "rango_inicio": ventana["rango_inicio"],
-                    "rango_fin": ventana["rango_fin"],
-                    "jugada": ventana["jugada"]
-                }
+        return f"{formato_12h(restantes[0])} - {formato_12h(restantes[-1])}"
 
     return None
+
+# =========================================================
+# FAVORITO
+# =========================================================
 
 def obtener_favorito(jugada):
     if not jugada:
@@ -187,7 +172,7 @@ async def start(message: types.Message):
     )
 
 # =========================================================
-# CALLBACK PRINCIPAL
+# CALLBACK PRINCIPAL /consulta
 # =========================================================
 
 @router.callback_query(lambda c: c.data == "consulta")
@@ -217,32 +202,65 @@ async def handle_callback(callback: types.CallbackQuery):
         return
 
     datos = cargar_json_remoto()
-    loteria = obtener_loteria_activa(datos)
+
+    loteria = None
+
+    # Buscar ventana activa por activar_inicio
+    for lot in datos["loterias"]:
+        for ventana in lot["ventanas"]:
+            a_inicio = datetime.strptime(ventana["activar_inicio"], "%H:%M").time()
+            a_fin = datetime.strptime(ventana["activar_fin"], "%H:%M").time()
+
+            if a_inicio <= ahora.time() <= a_fin:
+                loteria = {
+                    "visible": lot["visible"],
+                    "rango_inicio": ventana["rango_inicio"],
+                    "rango_fin": ventana["rango_fin"],
+                    "jugada": ventana["jugada"]
+                }
+                break
+
+    # Si no hay ventana activa, buscar si estamos dentro del rango
+    if not loteria:
+        for lot in datos["loterias"]:
+            for ventana in lot["ventanas"]:
+                r_inicio = datetime.strptime(ventana["rango_inicio"], "%H:%M").time()
+                r_fin = datetime.strptime(ventana["rango_fin"], "%H:%M").time()
+
+                if r_inicio <= ahora.time() <= r_fin:
+                    loteria = {
+                        "visible": lot["visible"],
+                        "rango_inicio": ventana["rango_inicio"],
+                        "rango_fin": ventana["rango_fin"],
+                        "jugada": ventana["jugada"]
+                    }
+                    break
 
     if not loteria:
-        jugada_curso = buscar_jugada_en_curso(datos, ahora)
-        if not jugada_curso:
-            await callback.answer("📵 Actualmente no hay actualización disponible.", show_alert=True)
-            return
-        loteria = jugada_curso
-
-    jugada = [md_escape(j) for j in loteria["jugada"]]
-    jugada_texto = " \\- ".join([f"*{j}*" for j in jugada]) if jugada else "*Sin jugada cargada*"
-
-    favorito_num, favorito_nombre = obtener_favorito(loteria["jugada"])
-
-    if favorito_num:
-        if favorito_nombre:
-            favorito_texto = f"*{md_escape(favorito_num)} \\({md_escape(favorito_nombre)}\\)*"
-        else:
-            favorito_texto = f"*{md_escape(favorito_num)}*"
-    else:
-        favorito_texto = "*N/A*"
+        await callback.answer("📵 Actualmente no hay actualización disponible.", show_alert=True)
+        return
 
     rango_dinamico = ajustar_rango_dinamico(
         loteria["rango_inicio"],
         loteria["rango_fin"],
         ahora
+    )
+
+    if rango_dinamico is None:
+        await callback.answer(
+            "📵 En este momento no hay una jugada para la lotería consultada.",
+            show_alert=True
+        )
+        return
+
+    jugada = [md_escape(j) for j in loteria["jugada"]]
+    jugada_texto = " \\- ".join([f"*{j}*" for j in jugada]) if jugada else "*Sin jugada cargada*"
+
+    favorito_num, favorito_nombre = obtener_favorito(loteria["jugada"])
+    favorito_texto = (
+        f"*{md_escape(favorito_num)}*"
+        if not favorito_nombre
+        else f"*{md_escape(favorito_num)} \\({md_escape(favorito_nombre)}\\)*"
     )
 
     mensaje = (
@@ -387,6 +405,33 @@ async def handle_multi(callback: types.CallbackQuery):
         MENSAJE_FIJO_ID = msg.message_id
         return
 
+    rango_dinamico = ajustar_rango_dinamico(
+        jugada_final["rango_inicio"],
+        jugada_final["rango_fin"],
+        ahora
+    )
+
+    if rango_dinamico is None:
+        mensaje = (
+            f"📵 *No hay jugada disponible en este momento*\n"
+            f"Para la lotería consultada: *{md_escape(nombre_loteria)}*"
+        )
+
+        if MENSAJE_FIJO_ID:
+            try:
+                await bot.delete_message(chat_destino, MENSAJE_FIJO_ID)
+            except:
+                pass
+
+        msg = await bot.send_message(
+            chat_destino,
+            mensaje,
+            parse_mode="MarkdownV2"
+        )
+
+        MENSAJE_FIJO_ID = msg.message_id
+        return
+
     jugada = [md_escape(j) for j in jugada_final["jugada"]]
     jugada_texto = " \\- ".join([f"*{j}*" for j in jugada])
 
@@ -395,12 +440,6 @@ async def handle_multi(callback: types.CallbackQuery):
         f"*{md_escape(favorito_num)}*"
         if not favorito_nombre
         else f"*{md_escape(favorito_num)} \\({md_escape(favorito_nombre)}\\)*"
-    )
-
-    rango_dinamico = ajustar_rango_dinamico(
-        jugada_final["rango_inicio"],
-        jugada_final["rango_fin"],
-        ahora
     )
 
     mensaje = (
