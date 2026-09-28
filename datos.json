@@ -77,9 +77,9 @@
       "visible": "Lotto Activo - La Granjita",
       "ventanas": [
         {
-          "activar_inicio": "09:00",
-          "activar_fin": "10:00",
-          "rango_inicio": "10:00",
+          "activar_inicio": "07:00",
+          "activar_fin": "08:00",
+          "rango_inicio": "08:00",
           "rango_fin": "11:00",
           "jugada": ["13", "10","36","02"]
         },
