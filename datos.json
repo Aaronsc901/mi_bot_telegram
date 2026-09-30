@@ -11,21 +11,21 @@
           "activar_fin": "07:59",
           "rango_inicio": "08:00",
           "rango_fin": "12:00",
-          "jugada": ["08", "60","70","59"]
+          "jugada": ["61", "60","55","43"]
         },
         {
           "activar_inicio": "12:30",
           "activar_fin": "13:00",
           "rango_inicio": "13:00",
           "rango_fin": "15:00",
-          "jugada": ["63","45","53","46"]
+          "jugada": ["43","24","56","23"]
         },
         {
           "activar_inicio": "15:30",
           "activar_fin": "15:59",
           "rango_inicio": "16:00",
           "rango_fin": "19:00",
-          "jugada": ["63","53","08","52"]
+          "jugada": ["75","32","71","33"]
         }
       ]
     },
@@ -81,21 +81,21 @@
           "activar_fin": "08:00",
           "rango_inicio": "08:00",
           "rango_fin": "11:00",
-          "jugada": ["04", "29","17"]
+          "jugada": ["04", "36","17"]
         },
         {
           "activar_inicio": "11:30",
           "activar_fin": "12:00",
           "rango_inicio": "12:00",
           "rango_fin": "16:00",
-          "jugada": ["32","15","24"]
+          "jugada": ["36","16","10"]
         },
         {
           "activar_inicio": "16:30",
           "activar_fin": "17:00",
           "rango_inicio": "17:00",
           "rango_fin": "19:00",
-          "jugada": ["24","33","32"]
+          "jugada": ["17","05","19","33","32"]
         }
       ]
     }
