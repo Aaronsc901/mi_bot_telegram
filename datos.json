@@ -11,21 +11,21 @@
           "activar_fin": "08:59",
           "rango_inicio": "08:00",
           "rango_fin": "12:00",
-          "jugada": ["19","28","53","29"]
+          "jugada": ["43","49","60","44"]
         },
         {
           "activar_inicio": "12:30",
           "activar_fin": "13:00",
           "rango_inicio": "13:00",
           "rango_fin": "15:00",
-          "jugada": ["22","41","65","29"]
+          "jugada": ["44","48","63","45"]
         },
         {
           "activar_inicio": "15:30",
           "activar_fin": "15:59",
           "rango_inicio": "16:00",
           "rango_fin": "19:00",
-          "jugada": ["22","41","65"]
+          "jugada": ["41","65","15","64"]
         }
       ]
     },
@@ -39,14 +39,14 @@
           "activar_fin": "11:30",
           "rango_inicio": "11:30",
           "rango_fin": "12:30",
-          "jugada": ["01","04","07"]
+          "jugada": ["01","04","10"]
         },
         {
           "activar_inicio": "14:00",
           "activar_fin": "14:30",
           "rango_inicio": "14:30",
           "rango_fin": "18:30",
-          "jugada": ["06","14","15"]
+          "jugada": ["15","24","25"]
         }
       ]
     },
@@ -60,14 +60,14 @@
           "activar_fin": "11:30",
           "rango_inicio": "11:30",
           "rango_fin": "11:30",
-          "jugada": ["10","12","18"]
+          "jugada": ["05","12","26"]
         },
         {
           "activar_inicio": "14:00",
           "activar_fin": "14:30",
           "rango_inicio": "14:30",
           "rango_fin": "18:30",
-          "jugada": ["20","22","25"]
+          "jugada": ["09","17","23"]
         }
       ]
     },
@@ -81,21 +81,21 @@
           "activar_fin": "08:00",
           "rango_inicio": "08:00",
           "rango_fin": "11:00",
-          "jugada": ["25","29","10"]
+          "jugada": ["00","0","36","32"]
         },
         {
           "activar_inicio": "11:30",
           "activar_fin": "12:00",
           "rango_inicio": "12:00",
           "rango_fin": "16:00",
-          "jugada": ["22","09","11","25"]
+          "jugada": ["29","20","27"]
         },
         {
           "activar_inicio": "16:30",
           "activar_fin": "17:00",
           "rango_inicio": "17:00",
           "rango_fin": "19:00",
-          "jugada": ["22","09","11","25"]
+          "jugada": ["23","12","09","05"]
         }
       ]
     }
