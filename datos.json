@@ -18,7 +18,7 @@
           "activar_fin": "13:00",
           "rango_inicio": "13:00",
           "rango_fin": "15:00",
-          "jugada": ["44","48","63","45"]
+          "jugada": ["44","63","45"]
         },
         {
           "activar_inicio": "15:30",
@@ -95,7 +95,7 @@
           "activar_fin": "17:00",
           "rango_inicio": "17:00",
           "rango_fin": "19:00",
-          "jugada": ["23","12","09"]
+          "jugada": ["23","09","29"]
         }
       ]
     }
