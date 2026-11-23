@@ -35,10 +35,10 @@
       "visible": "Lotto Internacional",
       "ventanas": [
         {
-          "activar_inicio": "11:00",
-          "activar_fin": "11:30",
-          "rango_inicio": "11:30",
-          "rango_fin": "12:30",
+          "activar_inicio": "08:00",
+          "activar_fin": "08:30",
+          "rango_inicio": "08:30",
+          "rango_fin": "11:30",
           "jugada": ["01","04","10"]
         },
         {
@@ -56,9 +56,9 @@
       "visible": "Ruleta Royal",
       "ventanas": [
         {
-          "activar_inicio": "11:00",
-          "activar_fin": "11:30",
-          "rango_inicio": "11:30",
+          "activar_inicio": "08:00",
+          "activar_fin": "08:30",
+          "rango_inicio": "08:30",
           "rango_fin": "11:30",
           "jugada": ["05","12","26"]
         },
